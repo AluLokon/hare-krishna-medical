@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hare Krishna Medical Store</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-top">
+      <div class="logo">🏥</div>
+      <div>
+        <h1>Hare Krishna Medical Store</h1>
+        <p class="tagline">Your trusted neighbourhood pharmacy</p>
+      </div>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search medicines...">
+      <button onclick="filterProducts()">Search</button>
+    </div>
+  </header>
+
+  <!-- CATEGORY BUTTONS -->
+  <nav id="catNav">
+    <button class="nav-btn active" onclick="filterCat('all', this)">All</button>
+    <button class="nav-btn" onclick="filterCat('fever', this)">Fever & Cold</button>
+    <button class="nav-btn" onclick="filterCat('vitamins', this)">Vitamins</button>
+    <button class="nav-btn" onclick="filterCat('pain', this)">Pain Relief</button>
+    <button class="nav-btn" onclick="filterCat('stomach', this)">Stomach</button>
+    <button class="nav-btn" onclick="filterCat('diabetes', this)">Diabetes</button>
+    <button class="nav-btn" onclick="filterCat('skincare', this)">Skin Care</button>
+  </nav>
+
+  <!-- DELIVERY BANNER -->
+  <div class="banner">
+    🚚 <strong>Free home delivery</strong> on orders above ₹299
+  </div>
+
+  <!-- PRODUCTS GRID -->
+  <h2 class="section-title">All Medicines & Products</h2>
+  <div class="products" id="productsGrid">
+    <p class="loading">Loading medicines...</p>
+  </div>
+
+  <!-- STICKY CART BAR -->
+  <div class="cart-bar hidden" id="cartBar" onclick="openCart()">
+    <div>
+      <div class="cart-count" id="cartCount">0 items</div>
+      <div class="cart-total" id="cartTotal">₹0.00</div>
+    </div>
+    <button class="checkout-btn">View Order →</button>
+  </div>
+
+  <!-- ORDER MODAL -->
+  <div class="modal-overlay" id="cartModal">
+    <div class="modal">
+      <div id="cartContent"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
