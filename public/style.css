@@ -57,7 +57,7 @@ nav::-webkit-scrollbar { display: none; }
 .products {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-  gap: 10px; padding: 0 1rem;
+  gap: 10px; padding: 0 1rem 5rem;
   max-width: 800px; margin: 0 auto;
 }
 .loading { color: #888; font-size: 14px; }
@@ -161,4 +161,50 @@ nav::-webkit-scrollbar { display: none; }
   margin-top: 1.5rem; background: #3B6D11; color: white;
   border: none; padding: 0.65rem 1.75rem;
   border-radius: 8px; font-size: 14px; cursor: pointer;
+}
+
+
+/* Out of stock button */
+.add-btn.out-of-stock {
+  background: #f0f0ee;
+  color: #999;
+  border-color: #ddd;
+  cursor: not-allowed;
+}
+
+/* Out of stock card — slightly faded */
+.product-card.no-stock {
+  opacity: 0.7;
+}
+
+
+/* Quantity control on product card */
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  border: 1px solid #3B6D11;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.qty-minus, .qty-plus {
+  background: #3B6D11;
+  color: white;
+  border: none;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qty-minus:hover, .qty-plus:hover { background: #2d5509; }
+.qty-display {
+  min-width: 28px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #3B6D11;
 }

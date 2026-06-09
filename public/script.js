@@ -32,18 +32,23 @@ function renderProducts() {
   }
 
   grid.innerHTML = filtered.map(p => `
-    <div class="product-card">
+    <div class="product-card ${p.stock === 0 ? 'no-stock' : ''}">
       <div class="product-icon">${p.icon}</div>
       <div class="product-name">${p.name}</div>
       <div class="product-brand">${p.brand}</div>
       <div class="product-price">₹${p.price}</div>
       <div class="product-footer">
         ${p.requires_rx ? '<span class="rx-badge">Rx</span>' : '<span></span>'}
-        <button
-          class="add-btn ${cart[p.id] ? 'added' : ''}"
-          onclick="addToCart(${p.id})">
-          ${cart[p.id] ? `In cart (${cart[p.id]})` : '+ Add'}
-        </button>
+        ${p.stock === 0
+  ? '<button class="add-btn out-of-stock" disabled>Out of Stock</button>'
+  : cart[p.id]
+    ? `<div class="qty-control">
+         <button class="qty-minus" onclick="removeFromCart(${p.id})">−</button>
+         <span class="qty-display">${cart[p.id]}</span>
+         <button class="qty-plus" onclick="addToCart(${p.id})">+</button>
+       </div>`
+    : `<button class="add-btn" onclick="addToCart(${p.id})">+ Add</button>`
+}
       </div>
     </div>
   `).join('');
@@ -51,6 +56,14 @@ function renderProducts() {
 
 function addToCart(id) {
   cart[id] = (cart[id] || 0) + 1;
+  renderProducts();
+  updateCartBar();
+}
+
+function removeFromCart(id) {
+  if (!cart[id]) return;
+  cart[id]--;
+  if (cart[id] === 0) delete cart[id];
   renderProducts();
   updateCartBar();
 }
@@ -67,6 +80,21 @@ function updateCartBar() {
   }, 0);
   document.getElementById('cartCount').textContent = count + ' item' + (count > 1 ? 's' : '');
   document.getElementById('cartTotal').textContent = '₹' + parseFloat(total).toFixed(2);
+
+  // Show delivery message
+  const banner = document.getElementById('deliveryBanner');
+  if (total >= 299) {
+    banner.innerHTML = '🚚 <strong>Free home delivery</strong> applied on your order!';
+    banner.style.background = '#EAF3DE';
+    banner.style.borderColor = '#C0DD97';
+    banner.style.color = '#27500A';
+  } else {
+    const remaining = (299 - total).toFixed(0);
+    banner.innerHTML = `🚚 Add <strong>₹${remaining} more</strong> for free home delivery!`;
+    banner.style.background = '#FAEEDA';
+    banner.style.borderColor = '#FAC775';
+    banner.style.color = '#633806';
+  }
 }
 
 function filterCat(cat, btn) {
