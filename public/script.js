@@ -1,37 +1,94 @@
 let allMedicines = [];
 let cart = {};
 let currentCat = 'all';
-let searchQuery = '';
+let searchMode = false;
+let searchTimeout = null;
 
-// When page loads, fetch medicines from our backend API
+// When page loads — show only featured medicines
 async function loadMedicines() {
   try {
-    const response = await fetch('/api/medicines');
+    const response = await fetch('/api/medicines/featured');
     allMedicines = await response.json();
-    renderProducts();
+    document.getElementById('sectionLabel').textContent = '⭐ Top Selling Medicines';
+    renderProducts(allMedicines);
   } catch (err) {
     document.getElementById('productsGrid').innerHTML =
       '<p style="color:red">Failed to load medicines. Is the server running?</p>';
   }
 }
 
-// Show products on screen
-function renderProducts() {
-  const grid = document.getElementById('productsGrid');
+// Search medicines from server as user types
+async function filterProducts() {
+  const q = document.getElementById('searchInput').value.trim();
 
-  const filtered = allMedicines.filter(p => {
-    const matchCat = currentCat === 'all' || p.category === currentCat;
-    const q = searchQuery.toLowerCase();
-    const matchSearch = !q || p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q);
-    return matchCat && matchSearch;
-  });
+  // Clear previous timeout
+  clearTimeout(searchTimeout);
 
-  if (!filtered.length) {
-    grid.innerHTML = '<p style="color:#888;font-size:14px;">No medicines found.</p>';
+  if (!q && currentCat === 'all') {
+    // No search, no filter — show featured
+    searchMode = false;
+    document.getElementById('sectionLabel').textContent = '⭐ Top Selling Medicines';
+    renderProducts(allMedicines);
     return;
   }
 
-  grid.innerHTML = filtered.map(p => `
+  // Wait 300ms after user stops typing before searching
+  searchTimeout = setTimeout(async () => {
+    try {
+      let url = '/api/medicines/search?';
+      if (q) url += `q=${encodeURIComponent(q)}&`;
+      if (currentCat !== 'all') url += `category=${currentCat}`;
+
+      const response = await fetch(url);
+      const results = await response.json();
+      searchMode = true;
+
+      if (q) {
+        document.getElementById('sectionLabel').textContent =
+          `🔍 Search results for "${q}" (${results.length} found)`;
+      } else {
+        document.getElementById('sectionLabel').textContent =
+          `📂 ${currentCat.charAt(0).toUpperCase() + currentCat.slice(1)} medicines (${results.length} found)`;
+      }
+
+      renderProducts(results);
+    } catch (err) {
+      console.error('Search failed', err);
+    }
+  }, 300);
+}
+
+// Filter by category
+async function filterCat(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  if (cat === 'all' && !document.getElementById('searchInput').value.trim()) {
+    // Back to featured
+    searchMode = false;
+    document.getElementById('sectionLabel').textContent = '⭐ Top Selling Medicines';
+    renderProducts(allMedicines);
+    return;
+  }
+
+  filterProducts();
+}
+
+// Show products on screen
+function renderProducts(medicines) {
+  const grid = document.getElementById('productsGrid');
+
+  if (!medicines.length) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#888">
+        <div style="font-size:32px;margin-bottom:0.5rem">🔍</div>
+        <p style="font-size:14px">No medicines found.<br>Try a different search term.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = medicines.map(p => `
     <div class="product-card ${p.stock === 0 ? 'no-stock' : ''}">
       <div class="product-icon">${p.icon}</div>
       <div class="product-name">${p.name}</div>
@@ -40,15 +97,15 @@ function renderProducts() {
       <div class="product-footer">
         ${p.requires_rx ? '<span class="rx-badge">Rx</span>' : '<span></span>'}
         ${p.stock === 0
-  ? '<button class="add-btn out-of-stock" disabled>Out of Stock</button>'
-  : cart[p.id]
-    ? `<div class="qty-control">
-         <button class="qty-minus" onclick="removeFromCart(${p.id})">−</button>
-         <span class="qty-display">${cart[p.id]}</span>
-         <button class="qty-plus" onclick="addToCart(${p.id})">+</button>
-       </div>`
-    : `<button class="add-btn" onclick="addToCart(${p.id})">+ Add</button>`
-}
+          ? '<button class="add-btn out-of-stock" disabled>Out of Stock</button>'
+          : cart[p.id]
+            ? `<div class="qty-control">
+                 <button class="qty-minus" onclick="removeFromCart(${p.id})">−</button>
+                 <span class="qty-display">${cart[p.id]}</span>
+                 <button class="qty-plus" onclick="addToCart(${p.id})">+</button>
+               </div>`
+            : `<button class="add-btn" onclick="addToCart(${p.id})">+ Add</button>`
+        }
       </div>
     </div>
   `).join('');
@@ -56,7 +113,8 @@ function renderProducts() {
 
 function addToCart(id) {
   cart[id] = (cart[id] || 0) + 1;
-  renderProducts();
+  const medicines = getCurrentMedicines();
+  renderProducts(medicines);
   updateCartBar();
 }
 
@@ -64,8 +122,24 @@ function removeFromCart(id) {
   if (!cart[id]) return;
   cart[id]--;
   if (cart[id] === 0) delete cart[id];
-  renderProducts();
+  const medicines = getCurrentMedicines();
+  renderProducts(medicines);
   updateCartBar();
+}
+
+function getCurrentMedicines() {
+  // Return whatever is currently displayed
+  const grid = document.getElementById('productsGrid');
+  const cards = grid.querySelectorAll('.product-card');
+  const ids = Array.from(cards).map(c => {
+    const btn = c.querySelector('[onclick*="addToCart"], [onclick*="removeFromCart"]');
+    if (btn) {
+      const match = btn.getAttribute('onclick').match(/\d+/);
+      return match ? parseInt(match[0]) : null;
+    }
+    return null;
+  }).filter(Boolean);
+  return allMedicines.filter(m => ids.includes(m.id));
 }
 
 function updateCartBar() {
@@ -76,12 +150,11 @@ function updateCartBar() {
   const count = ids.reduce((sum, k) => sum + cart[k], 0);
   const total = ids.reduce((sum, k) => {
     const med = allMedicines.find(m => m.id == k);
-    return sum + cart[k] * med.price;
+    return sum + (med ? cart[k] * med.price : 0);
   }, 0);
   document.getElementById('cartCount').textContent = count + ' item' + (count > 1 ? 's' : '');
   document.getElementById('cartTotal').textContent = '₹' + parseFloat(total).toFixed(2);
 
-  // Show delivery message
   const banner = document.getElementById('deliveryBanner');
   if (total >= 299) {
     banner.innerHTML = '🚚 <strong>Free home delivery</strong> applied on your order!';
@@ -95,18 +168,6 @@ function updateCartBar() {
     banner.style.borderColor = '#FAC775';
     banner.style.color = '#633806';
   }
-}
-
-function filterCat(cat, btn) {
-  currentCat = cat;
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderProducts();
-}
-
-function filterProducts() {
-  searchQuery = document.getElementById('searchInput').value;
-  renderProducts();
 }
 
 function openCart() {
@@ -131,11 +192,12 @@ function renderCartContent() {
 
   const total = ids.reduce((sum, k) => {
     const med = allMedicines.find(m => m.id == k);
-    return sum + cart[k] * med.price;
+    return sum + (med ? cart[k] * med.price : 0);
   }, 0);
 
   const itemsHtml = ids.map(k => {
     const p = allMedicines.find(m => m.id == k);
+    if (!p) return '';
     return `
       <div class="cart-item">
         <div>
@@ -153,6 +215,11 @@ function renderCartContent() {
       </div>`;
   }).join('');
 
+  const hasRx = ids.some(k => {
+    const med = allMedicines.find(m => m.id == k);
+    return med && med.requires_rx;
+  });
+
   document.getElementById('cartContent').innerHTML = `
     <button class="modal-close" onclick="closeCart()">✕</button>
     <h2>Your Order</h2>
@@ -161,6 +228,14 @@ function renderCartContent() {
       <span>Total</span>
       <span style="color:#3B6D11">₹${parseFloat(total).toFixed(2)}</span>
     </div>
+    ${hasRx ? `
+    <div style="background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:13px;color:#633806">
+      ⚠️ Your order contains <strong>prescription medicines</strong>. Please upload your prescription below.
+    </div>
+    <label class="form-label" style="font-size:13px;color:#555">Upload Prescription *</label>
+    <input type="file" id="prescriptionFile" accept="image/*,.pdf"
+      style="width:100%;padding:8px;border:1px dashed #ddd;border-radius:8px;font-size:13px;margin-bottom:8px">
+    ` : ''}
     <div class="order-form">
       <label>Your name *</label>
       <input type="text" id="custName" placeholder="e.g. Ramesh Kumar">
@@ -170,7 +245,7 @@ function renderCartContent() {
       <textarea id="custAddress" placeholder="House no., street, landmark..."></textarea>
       <label>Extra notes</label>
       <textarea id="custNotes" placeholder="Any other instructions?" rows="2"></textarea>
-      <button class="place-order-btn" onclick="placeOrder()">Place Order →</button>
+      <button class="place-order-btn" onclick="placeOrder(${hasRx})">Place Order →</button>
     </div>`;
 }
 
@@ -178,11 +253,10 @@ function changeQty(id, delta) {
   cart[id] = Math.max(0, (cart[id] || 0) + delta);
   if (cart[id] === 0) delete cart[id];
   renderCartContent();
-  renderProducts();
   updateCartBar();
 }
 
-async function placeOrder() {
+async function placeOrder(hasRx) {
   const name    = document.getElementById('custName').value.trim();
   const phone   = document.getElementById('custPhone').value.trim();
   const address = document.getElementById('custAddress').value.trim();
@@ -193,6 +267,14 @@ async function placeOrder() {
     return;
   }
 
+  if (hasRx) {
+    const fileInput = document.getElementById('prescriptionFile');
+    if (!fileInput || !fileInput.files.length) {
+      alert('Please upload your prescription for Rx medicines.');
+      return;
+    }
+  }
+
   const ids = Object.keys(cart).filter(k => cart[k] > 0);
   const items = ids.map(k => {
     const med = allMedicines.find(m => m.id == k);
@@ -200,7 +282,15 @@ async function placeOrder() {
   });
   const total = items.reduce((sum, i) => sum + i.qty * i.price, 0);
 
-  // Save order to database
+  // Handle prescription upload
+  let prescriptionData = null;
+  if (hasRx) {
+    const fileInput = document.getElementById('prescriptionFile');
+    if (fileInput && fileInput.files.length) {
+      prescriptionData = await toBase64(fileInput.files[0]);
+    }
+  }
+
   try {
     await fetch('/api/orders', {
       method: 'POST',
@@ -210,31 +300,40 @@ async function placeOrder() {
         phone: phone,
         address: address + (notes ? '\nNotes: ' + notes : ''),
         items: items,
-        total: total
+        total: total,
+        prescription: prescriptionData
       })
     });
   } catch (err) {
     console.error('Order save failed', err);
   }
 
-  // Clear cart and show success
   cart = {};
-  renderProducts();
   updateCartBar();
   document.getElementById('cartContent').innerHTML = `
     <div class="order-success">
       <div class="tick">✅</div>
       <h3>Order Placed!</h3>
       <p>Thank you ${name}!<br>
-      Hare Krishna Medical Store will call you on <strong>${phone}</strong> to confirm your order.</p>
+      Hare Krishna Medical Store will call you on <strong>${phone}</strong> to confirm.</p>
       <button class="continue-btn" onclick="closeCart()">Continue Shopping</button>
     </div>`;
 }
 
-// Close modal when clicking outside
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 document.getElementById('cartModal').addEventListener('click', function(e) {
   if (e.target === this) closeCart();
 });
 
-// Load medicines when page opens
+// Also update search input to trigger on every keystroke
+document.getElementById('searchInput').addEventListener('input', filterProducts);
+
 loadMedicines();

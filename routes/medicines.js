@@ -13,6 +13,44 @@ router.get('/', async (req, res) => {
   }
 });
 
+
+// GET featured medicines only
+router.get('/featured', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM medicines WHERE featured = true ORDER BY name ASC'
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch featured medicines' });
+  }
+});
+
+// GET search medicines
+router.get('/search', async (req, res) => {
+  const { q, category } = req.query;
+  try {
+    let query = 'SELECT * FROM medicines WHERE 1=1';
+    const params = [];
+
+    if (q) {
+      params.push(`%${q}%`);
+      query += ` AND (name ILIKE $${params.length} OR brand ILIKE $${params.length} OR category ILIKE $${params.length})`;    }
+    if (category && category !== 'all') {
+      params.push(category);
+      query += ` AND category = $${params.length}`;
+    }
+    query += ' ORDER BY name ASC LIMIT 50';
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
 // POST — add new medicine
 router.post('/', async (req, res) => {
   const { name, brand, price, category, icon, requires_rx, stock } = req.body;
