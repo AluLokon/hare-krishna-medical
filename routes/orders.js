@@ -1,3 +1,4 @@
+const verifyToken = require('../middleware');
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
@@ -21,7 +22,7 @@ router.post('/', async (req, res) => {
 });
 
 // GET /api/orders — your brother can see all orders
-router.get('/', async (req, res) => {
+router.get('/', verifyToken, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
     res.json(result.rows);
@@ -33,7 +34,7 @@ router.get('/', async (req, res) => {
 
 
 // PATCH /api/orders/:id/deliver — mark order as delivered
-router.patch('/:id/deliver', async (req, res) => {
+router.patch('/:id/deliver', verifyToken, async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query(

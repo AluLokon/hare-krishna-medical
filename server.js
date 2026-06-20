@@ -23,7 +23,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/medicines', medicinesRouter);
 
 // Protected routes (login required)
-app.use('/api/orders', verifyToken, ordersRouter);
+app.use('/api/orders', ordersRouter);
 
 // Start server
 app.listen(PORT, () => {
