@@ -164,6 +164,35 @@
       font-size: 22px; cursor: pointer; color: #888;
     }
     .rx-image { width: 100%; border-radius: 8px; margin-top: 1rem; }
+
+
+    /* Click feedback for all buttons */
+button {
+  transition: transform 0.1s ease, opacity 0.1s ease, background 0.15s ease;
+}
+button:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+/* Stronger feedback specifically for action buttons */
+.deliver-btn:active,
+.update-btn:active,
+.delete-btn:active,
+.refresh-btn:active,
+.rx-img-btn:active,
+.logout-btn:active {
+  transform: scale(0.94);
+}
+
+/* Visual "selected/clicked" state that stays briefly */
+.btn-clicked {
+  animation: clickPulse 0.3s ease;
+}
+@keyframes clickPulse {
+  0%   { background-color: #3B6D11; color: white; }
+  100% { background-color: inherit; color: inherit; }
+}
   </style>
 </head>
 <body>
@@ -236,9 +265,15 @@
     <!-- Medicines Manager -->
     <div class="orders-section" style="margin-top:2rem">
       <div class="orders-header">
-        <h2>Medicines Manager</h2>
-        <button class="refresh-btn" onclick="loadMedicines()">↻ Refresh</button>
-      </div>
+  <h2>Medicines Manager</h2>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <input type="text" id="medSearchInput" placeholder="🔍 Search medicines..."
+      onkeyup="filterMedicinesList()"
+      style="padding:6px 12px;border-radius:8px;border:1px solid #ddd;font-family:inherit;font-size:13px;min-width:200px">
+    <button class="refresh-btn" onclick="loadMedicines()">↻ Refresh</button>
+  </div>
+</div>
+<div id="medCountLabel" style="font-size:13px;color:#777;margin-bottom:10px"></div>
 
       <div class="order-card" style="margin-bottom:1rem">
         <div style="font-size:15px;font-weight:500;margin-bottom:1rem">➕ Add New Medicine</div>
@@ -378,13 +413,18 @@
     document.getElementById('passwordInput').value = '';
   }
 
-  function showDashboard() {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    loadOrders();
-    loadMedicines();
-    startAutoRefresh();
-  }
+function showDashboard() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  // Set date filter to today by default
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dateFilter').value = today;
+
+  loadOrders();
+  loadMedicines();
+  startAutoRefresh();
+}
 
   // Helper — adds token to every API request
   function authHeaders() {
@@ -402,18 +442,25 @@
   };
 
   // ── Orders ──
-  async function loadOrders() {
-    try {
-      const res = await fetch('/api/orders', { headers: authHeaders() });
-      if (res.status === 401 || res.status === 403) { logout(); return; }
-      allOrders = await res.json();
+async function loadOrders() {
+  try {
+    const res = await fetch('/api/orders', { headers: authHeaders() });
+    if (res.status === 401 || res.status === 403) { logout(); return; }
+    allOrders = await res.json();
+
+    // Keep date filter applied if one is selected
+    const dateInput = document.getElementById('dateFilter');
+    if (dateInput.value) {
+      applyDateFilter();
+    } else {
       renderOrders(allOrders);
       updateStats(allOrders);
-    } catch (err) {
-      document.getElementById('ordersList').innerHTML =
-        '<p style="color:red;padding:1rem">Failed to load orders.</p>';
     }
+  } catch (err) {
+    document.getElementById('ordersList').innerHTML =
+      '<p style="color:red;padding:1rem">Failed to load orders.</p>';
   }
+}
 
   function renderOrders(orders) {
     const list = document.getElementById('ordersList');
@@ -495,6 +542,7 @@
     document.getElementById('dateFilter').value = '';
     renderOrders(allOrders);
     updateStats(allOrders);
+    
   }
 
   async function markDelivered(id) {
@@ -520,49 +568,83 @@
   }
 
   // ── Medicines Manager ──
-  async function loadMedicines() {
-    try {
-      const res = await fetch('/api/medicines');
-      allMedsList = await res.json();
-      renderMedicinesList();
-    } catch (err) {
-      document.getElementById('medicinesList').innerHTML =
-        '<p style="color:red">Failed to load medicines.</p>';
-    }
+async function loadMedicines() {
+  try {
+    const res = await fetch('/api/medicines');
+    allMedsList = await res.json();
+    showEmptySearchState();
+  } catch (err) {
+    document.getElementById('medicinesList').innerHTML =
+      '<p style="color:red">Failed to load medicines.</p>';
+  }
+}
+
+function showEmptySearchState() {
+  const list = document.getElementById('medicinesList');
+  const countLabel = document.getElementById('medCountLabel');
+  countLabel.textContent = `${allMedsList.length} medicines total · search to view`;
+  list.innerHTML = `
+    <div style="text-align:center;padding:2rem;color:#888">
+      <div style="font-size:32px;margin-bottom:0.5rem">🔍</div>
+      <p style="font-size:14px">Type a medicine name above to search and manage it.</p>
+    </div>`;
+}
+
+function renderMedicinesList(filtered) {
+  const list = document.getElementById('medicinesList');
+  const medsToShow = filtered || allMedsList;
+  const countLabel = document.getElementById('medCountLabel');
+
+  countLabel.textContent = `Showing ${medsToShow.length} of ${allMedsList.length} medicines`;
+
+  if (!medsToShow.length) {
+    list.innerHTML = '<p style="color:#888;font-size:14px;padding:1rem 0;">No medicines found matching your search.</p>';
+    return;
   }
 
-  function renderMedicinesList() {
-    const list = document.getElementById('medicinesList');
-    if (!allMedsList.length) {
-      list.innerHTML = '<p style="color:#888;font-size:14px;">No medicines yet.</p>';
-      return;
-    }
-    list.innerHTML = allMedsList.map(m => `
-      <div class="med-row">
-        <div style="flex:1;min-width:120px">
-          <div class="med-name">${m.icon} ${m.name}</div>
-          <div class="med-brand">${m.brand} · ${m.category}
-            ${m.featured ? ' · ⭐ Featured' : ''}
-            ${m.requires_rx ? ' · <span style="color:#A32D2D">Rx</span>' : ''}
-          </div>
-        </div>
-        <div class="med-controls">
-          <div>
-            <div style="font-size:11px;color:#777;margin-bottom:2px">Price ₹</div>
-            <input type="number" class="med-input" id="price-${m.id}" value="${m.price}">
-          </div>
-          <div>
-            <div style="font-size:11px;color:#777;margin-bottom:2px">Stock</div>
-            <input type="number" class="med-input" id="stock-${m.id}" value="${m.stock}">
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px;margin-top:14px">
-            <button class="update-btn" onclick="updateMedicine(${m.id})">Update</button>
-            <button class="delete-btn" onclick="deleteMedicine(${m.id}, '${m.name.replace(/'/g, "\\'")}')">Delete</button>
-          </div>
+  list.innerHTML = medsToShow.map(m => `
+    <div class="med-row">
+      <div style="flex:1;min-width:120px">
+        <div class="med-name">${m.icon} ${m.name}</div>
+        <div class="med-brand">${m.brand} · ${m.category}
+          ${m.featured ? ' · ⭐ Featured' : ''}
+          ${m.requires_rx ? ' · <span style="color:#A32D2D">Rx</span>' : ''}
         </div>
       </div>
-    `).join('');
+      <div class="med-controls">
+        <div>
+          <div style="font-size:11px;color:#777;margin-bottom:2px">Price ₹</div>
+          <input type="number" class="med-input" id="price-${m.id}" value="${m.price}">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#777;margin-bottom:2px">Stock</div>
+          <input type="number" class="med-input" id="stock-${m.id}" value="${m.stock}">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:14px">
+          <button class="update-btn" onclick="updateMedicine(${m.id})">Update</button>
+          <button class="delete-btn" onclick="deleteMedicine(${m.id}, '${m.name.replace(/'/g, "\\'")}')">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterMedicinesList() {
+  const q = document.getElementById('medSearchInput').value.trim().toLowerCase();
+
+  if (!q) {
+    showEmptySearchState();
+    return;
   }
+
+  const filtered = allMedsList.filter(m =>
+    m.name.toLowerCase().includes(q) ||
+    (m.brand && m.brand.toLowerCase().includes(q)) ||
+    (m.category && m.category.toLowerCase().includes(q))
+  );
+
+  renderMedicinesList(filtered);
+}
 
   async function addMedicine() {
     const name       = document.getElementById('newName').value.trim();
@@ -622,15 +704,24 @@
   }
 
   // ── Auto refresh ──
-  let countdown = 30;
-  function startAutoRefresh() {
-    setInterval(() => {
-      countdown--;
-      document.getElementById('refreshTimer').textContent =
-        `Auto-refreshing in ${countdown}s`;
-      if (countdown <= 0) { countdown = 30; loadOrders(); }
-    }, 1000);
-  }
+let countdown = 30;
+function startAutoRefresh() {
+  setInterval(() => {
+    const dateInput = document.getElementById('dateFilter');
+    const timerEl = document.getElementById('refreshTimer');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (dateInput.value && dateInput.value !== today) {
+      // Viewing a past date — pause auto refresh
+      timerEl.textContent = `📅 Showing ${dateInput.value} · Auto-refresh paused`;
+      return;
+    }
+
+    countdown--;
+    timerEl.textContent = `Auto-refreshing in ${countdown}s`;
+    if (countdown <= 0) { countdown = 30; loadOrders(); }
+  }, 1000);
+}
 
   document.getElementById('rxModal').addEventListener('click', function(e) {
     if (e.target === this) closeRxModal();
