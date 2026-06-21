@@ -315,7 +315,7 @@ async function placeOrder(hasRx) {
       <div class="tick">✅</div>
       <h3>Order Placed!</h3>
       <p>Thank you ${name}!<br>
-      Hare Krishna Medical Store will call you on <strong>${phone}</strong> to confirm.</p>
+      Sitaram Medical Store will call you on <strong>${phone}</strong> to confirm.</p>
       <button class="continue-btn" onclick="closeCart()">Continue Shopping</button>
     </div>`;
 }
