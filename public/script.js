@@ -1,4 +1,6 @@
-let allMedicines = [];
+let allMedicines = []; 
+let currentDisplayed = []; // tracks what's currently shown on screen     // featured medicines (home page)
+let medicineCache = {};     // ALL medicines ever loaded (for cart price lookup)
 let cart = {};
 let currentCat = 'all';
 let searchMode = false;
@@ -9,6 +11,8 @@ async function loadMedicines() {
   try {
     const response = await fetch('/api/medicines/featured');
     allMedicines = await response.json();
+    // Cache all featured medicines by id for cart lookup
+    allMedicines.forEach(m => medicineCache[m.id] = m);
     document.getElementById('sectionLabel').textContent = '⭐ Top Selling Medicines';
     renderProducts(allMedicines);
   } catch (err) {
@@ -41,6 +45,8 @@ async function filterProducts() {
 
       const response = await fetch(url);
       const results = await response.json();
+      // Cache search results for cart price lookup
+      results.forEach(m => medicineCache[m.id] = m);
       searchMode = true;
 
       if (q) {
@@ -77,6 +83,7 @@ async function filterCat(cat, btn) {
 
 // Show products on screen
 function renderProducts(medicines) {
+  currentDisplayed = medicines;
   const grid = document.getElementById('productsGrid');
 
   if (!medicines.length) {
@@ -113,8 +120,7 @@ function renderProducts(medicines) {
 
 function addToCart(id) {
   cart[id] = (cart[id] || 0) + 1;
-  const medicines = getCurrentMedicines();
-  renderProducts(medicines);
+  renderProducts(currentDisplayed);
   updateCartBar();
 }
 
@@ -122,8 +128,7 @@ function removeFromCart(id) {
   if (!cart[id]) return;
   cart[id]--;
   if (cart[id] === 0) delete cart[id];
-  const medicines = getCurrentMedicines();
-  renderProducts(medicines);
+  renderProducts(currentDisplayed);
   updateCartBar();
 }
 
@@ -149,7 +154,7 @@ function updateCartBar() {
   bar.classList.remove('hidden');
   const count = ids.reduce((sum, k) => sum + cart[k], 0);
   const total = ids.reduce((sum, k) => {
-    const med = allMedicines.find(m => m.id == k);
+    const med = medicineCache[k];
     return sum + (med ? cart[k] * med.price : 0);
   }, 0);
   document.getElementById('cartCount').textContent = count + ' item' + (count > 1 ? 's' : '');
@@ -190,13 +195,13 @@ function renderCartContent() {
     return;
   }
 
-  const total = ids.reduce((sum, k) => {
-    const med = allMedicines.find(m => m.id == k);
+const total = ids.reduce((sum, k) => {
+    const med = medicineCache[k];
     return sum + (med ? cart[k] * med.price : 0);
   }, 0);
 
-  const itemsHtml = ids.map(k => {
-    const p = allMedicines.find(m => m.id == k);
+const itemsHtml = ids.map(k => {
+    const p = medicineCache[k];
     if (!p) return '';
     return `
       <div class="cart-item">
@@ -215,8 +220,8 @@ function renderCartContent() {
       </div>`;
   }).join('');
 
-  const hasRx = ids.some(k => {
-    const med = allMedicines.find(m => m.id == k);
+const hasRx = ids.some(k => {
+    const med = medicineCache[k];
     return med && med.requires_rx;
   });
 
@@ -276,9 +281,14 @@ async function placeOrder(hasRx) {
   }
 
   const ids = Object.keys(cart).filter(k => cart[k] > 0);
-  const items = ids.map(k => {
-    const med = allMedicines.find(m => m.id == k);
-    return { id: k, name: med.name, qty: cart[k], price: med.price };
+const items = ids.map(k => {
+    const med = medicineCache[k];
+    return {
+      id: parseInt(k),        // make sure id is a number not a string
+      name: med.name,
+      qty: cart[k],
+      price: med.price
+    };
   });
   const total = items.reduce((sum, i) => sum + i.qty * i.price, 0);
 
@@ -291,8 +301,8 @@ async function placeOrder(hasRx) {
     }
   }
 
-  try {
-    await fetch('/api/orders', {
+try {
+    const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -304,8 +314,19 @@ async function placeOrder(hasRx) {
         prescription: prescriptionData
       })
     });
+
+    const data = await res.json();
+
+    // If stock ran out — show error to customer
+    if (!res.ok) {
+      alert(data.error || 'Failed to place order. Please try again.');
+      return;
+    }
+
   } catch (err) {
     console.error('Order save failed', err);
+    alert('Something went wrong. Please try again.');
+    return;
   }
 
   cart = {};
@@ -336,4 +357,47 @@ document.getElementById('cartModal').addEventListener('click', function(e) {
 // Also update search input to trigger on every keystroke
 document.getElementById('searchInput').addEventListener('input', filterProducts);
 
+loadCategories();
 loadMedicines();
+
+
+
+// Load categories dynamically from database
+async function loadCategories() {
+  try {
+    const res = await fetch('/api/medicines/categories');
+    const categories = await res.json();
+
+    // Pretty names for categories
+    const labels = {
+      fever: 'Fever & Cold',
+      vitamins: 'Vitamins',
+      pain: 'Pain Relief',
+      stomach: 'Stomach',
+      diabetes: 'Diabetes',
+      skincare: 'Skin Care',
+      antibiotics: 'Antibiotics',
+      heart: 'Heart & BP',
+      respiratory: 'Respiratory',
+      eye: 'Eye Care',
+      ear: 'Ear Care',
+      thyroid: 'Thyroid',
+      neuro: 'Neuro',
+      skin: 'Skin Care',
+      womens: "Women's Health",
+      ent: 'ENT',
+      general: 'General'
+    };
+
+    const nav = document.getElementById('catNav');
+    categories.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'nav-btn';
+      btn.textContent = labels[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+      btn.onclick = function() { filterCat(cat, this); };
+      nav.appendChild(btn);
+    });
+  } catch (err) {
+    console.error('Failed to load categories', err);
+  }
+}

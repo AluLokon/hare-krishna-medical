@@ -193,6 +193,23 @@ button:active {
   0%   { background-color: #3B6D11; color: white; }
   100% { background-color: inherit; color: inherit; }
 }
+.low-stock-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 0.5px solid #F7C1C1;
+  font-size: 13px;
+}
+.low-stock-item:last-child { border-bottom: none; }
+.stock-number {
+  font-weight: 500;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+.stock-zero { background: #FCEBEB; color: #A32D2D; }
+.stock-low { background: #FAEEDA; color: #633806; }
   </style>
 </head>
 <body>
@@ -224,6 +241,18 @@ button:active {
   <button class="logout-btn" onclick="logout()">Logout</button>
 </div>
     </header>
+    <!-- Low Stock Alert Panel -->
+<div id="lowStockPanel" style="display:none;margin:1rem;border-radius:12px;overflow:hidden;border:1px solid #F7C1C1">
+  <div style="background:#FCEBEB;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:18px">⚠️</span>
+      <span style="font-size:14px;font-weight:500;color:#A32D2D">Low Stock Alert</span>
+      <span id="lowStockCount" style="background:#A32D2D;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500">0</span>
+    </div>
+    <span style="font-size:12px;color:#A32D2D">Medicines running low — restock soon</span>
+  </div>
+  <div id="lowStockList" style="background:white;padding:0.5rem 1rem"></div>
+</div>
 
     <div class="stats">
       <div class="stat-card">
@@ -417,12 +446,12 @@ function showDashboard() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
-  // Set date filter to today by default
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('dateFilter').value = today;
 
   loadOrders();
   loadMedicines();
+  loadLowStock();
   startAutoRefresh();
 }
 
@@ -719,7 +748,7 @@ function startAutoRefresh() {
 
     countdown--;
     timerEl.textContent = `Auto-refreshing in ${countdown}s`;
-    if (countdown <= 0) { countdown = 30; loadOrders(); }
+    if (countdown <= 0) { countdown = 30; loadOrders(); loadLowStock(); }
   }, 1000);
 }
 
@@ -809,6 +838,50 @@ async function changeEmail() {
     msg.style.color = '#A32D2D';
     msg.textContent = 'Something went wrong.';
   }
+}
+
+
+// Load low stock medicines
+async function loadLowStock() {
+  try {
+    const res = await fetch('/api/medicines/low-stock', {
+      headers: authHeaders()
+    });
+    if (!res.ok) return;
+    const medicines = await res.json();
+    renderLowStock(medicines);
+  } catch (err) {
+    console.error('Failed to load low stock', err);
+  }
+}
+
+function renderLowStock(medicines) {
+  const panel = document.getElementById('lowStockPanel');
+  const list = document.getElementById('lowStockList');
+  const count = document.getElementById('lowStockCount');
+
+  if (!medicines.length) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+  count.textContent = medicines.length;
+
+  list.innerHTML = medicines.map(m => `
+    <div class="low-stock-item">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span>${m.icon}</span>
+        <div>
+          <div style="font-weight:500;color:#1a1a1a">${m.name}</div>
+          <div style="font-size:11px;color:#777">${m.brand} · ${m.category}</div>
+        </div>
+      </div>
+      <span class="stock-number ${m.stock === 0 ? 'stock-zero' : 'stock-low'}">
+        ${m.stock === 0 ? 'Out of stock' : `${m.stock} left`}
+      </span>
+    </div>
+  `).join('');
 }
 </script>
 </body>
