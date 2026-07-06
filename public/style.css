@@ -208,3 +208,69 @@ nav::-webkit-scrollbar { display: none; }
   font-weight: 500;
   color: #3B6D11;
 }
+
+
+/* ── Mobile Responsive Fixes ── */
+@media (max-width: 600px) {
+
+  /* Header */
+  .store-name { font-size: 17px; }
+  .tagline { font-size: 11px; }
+  .logo { font-size: 28px; }
+
+  /* Search bar */
+  .search-bar input { font-size: 13px; padding: 0.5rem 0.65rem; }
+  .search-bar button { padding: 0.5rem 0.75rem; font-size: 12px; }
+
+  /* Category nav */
+  nav { padding: 0.5rem 0.75rem; gap: 6px; }
+  .nav-btn { padding: 4px 12px; font-size: 12px; }
+
+  /* Banners */
+  .banner { margin: 0.75rem; padding: 0.75rem 1rem; font-size: 12px; }
+
+  /* Products grid — 2 columns on mobile */
+  .products {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 0 0.75rem 5rem;
+  }
+
+  /* Product cards */
+  .product-card { padding: 0.75rem; }
+  .product-icon { font-size: 24px; }
+  .product-name { font-size: 12px; }
+  .product-brand { font-size: 10px; }
+  .product-price { font-size: 14px; }
+  .add-btn { font-size: 11px; padding: 3px 8px; }
+  .rx-badge { font-size: 9px; padding: 1px 5px; }
+
+  /* Qty controls on card */
+  .qty-minus, .qty-plus { width: 24px; height: 24px; font-size: 14px; }
+  .qty-display { font-size: 12px; min-width: 18px; }
+
+  /* Cart bar */
+  .cart-bar { width: calc(100% - 1.5rem); bottom: 0.75rem; padding: 0.75rem 1rem; }
+  .cart-total { font-size: 16px; }
+  .checkout-btn { padding: 6px 14px; font-size: 12px; }
+
+  /* Section title */
+  .section-title { font-size: 14px; padding: 0 0.75rem; margin: 1rem 0 0.5rem; }
+
+  /* Footer */
+  footer { font-size: 12px; padding: 1.5rem 0.75rem 1rem; }
+
+  /* Modal */
+  .modal { padding: 1.25rem; }
+  .modal h2 { font-size: 17px; }
+  .cart-item { font-size: 13px; }
+  .cart-item-price { font-size: 13px; }
+  .qty-controls { gap: 6px; }
+  .qty-btn { width: 24px; height: 24px; }
+  .place-order-btn { font-size: 14px; padding: 0.7rem; }
+
+  /* Order form */
+  .order-form input, .order-form textarea {
+    font-size: 13px; padding: 0.5rem 0.75rem;
+  }
+}

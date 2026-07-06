@@ -210,6 +210,85 @@ button:active {
 }
 .stock-zero { background: #FCEBEB; color: #A32D2D; }
 .stock-low { background: #FAEEDA; color: #633806; }
+
+/* ── Admin Mobile Fixes ── */
+@media (max-width: 600px) {
+
+  /* Header */
+  header { padding: 0.75rem 1rem; }
+  header h1 { font-size: 15px; }
+  header p { font-size: 11px; }
+  .logout-btn { padding: 5px 10px; font-size: 12px; }
+
+  /* Stats */
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 0.75rem;
+    gap: 8px;
+  }
+  .stat-card { padding: 0.75rem; }
+  .stat-value { font-size: 20px; }
+  .stat-label { font-size: 11px; }
+
+  /* Orders section */
+  .orders-section { padding: 0 0.75rem 2rem; }
+  .orders-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .orders-header h2 { font-size: 14px; }
+  .orders-header div { width: 100%; }
+  .refresh-btn { font-size: 12px; padding: 4px 10px; }
+
+  /* Date filter row — stack on mobile */
+  .orders-header > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+  .orders-header input[type="date"] {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  /* Order cards */
+  .order-card { padding: 0.75rem; }
+  .order-name { font-size: 14px; }
+  .order-phone { font-size: 12px; }
+  .order-time { font-size: 11px; }
+  .order-id { font-size: 11px; }
+  .order-total { font-size: 14px; }
+  .order-items { font-size: 12px; }
+  .order-item-row { padding: 2px 0; }
+  .order-address { font-size: 12px; }
+  .order-bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .deliver-btn { width: 100%; text-align: center; padding: 8px; }
+  .rx-img-btn { width: 100%; text-align: center; padding: 8px; }
+
+  /* Progress bar */
+  .order-top { flex-direction: column; gap: 6px; }
+  .order-status { font-size: 10px; }
+
+  /* Low stock panel */
+  #lowStockPanel { margin: 0.75rem; }
+  .low-stock-item { flex-wrap: wrap; gap: 6px; }
+
+  /* Medicines manager */
+  .med-row { flex-direction: column; align-items: flex-start; }
+  .med-controls { width: 100%; justify-content: flex-end; }
+  .med-input { width: 60px; }
+
+  /* Add medicine form */
+  .order-card div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Login box */
+  .login-box { padding: 1.5rem; }
+  .login-box h1 { font-size: 18px; }
+
+  /* Settings modal */
+  .modal { width: 95vw; padding: 1.25rem; }
+}
+
   </style>
 </head>
 <body>
