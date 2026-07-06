@@ -323,22 +323,25 @@ try {
       return;
     }
 
+  const orderId = data.order_id;
+    cart = {};
+    updateCartBar();
+    document.getElementById('cartContent').innerHTML = `
+      <div class="order-success">
+        <div class="tick">✅</div>
+        <h3>Order Placed!</h3>
+        <p style="font-size:13px;color:#777;margin-bottom:8px">Order ID</p>
+        <div style="font-size:28px;font-weight:600;color:#3B6D11;margin-bottom:12px">#${orderId}</div>
+        <p>Thank you ${name}!<br>
+        Sitaram Medical Store will call you on <strong>${phone}</strong> to confirm.</p>
+        <p style="font-size:12px;color:#888;margin-top:8px">Save your Order ID to track your order status.</p>
+        <button class="continue-btn" onclick="closeCart()">Continue Shopping</button>
+      </div>`;
+
   } catch (err) {
     console.error('Order save failed', err);
     alert('Something went wrong. Please try again.');
-    return;
   }
-
-  cart = {};
-  updateCartBar();
-  document.getElementById('cartContent').innerHTML = `
-    <div class="order-success">
-      <div class="tick">✅</div>
-      <h3>Order Placed!</h3>
-      <p>Thank you ${name}!<br>
-      Sitaram Medical Store will call you on <strong>${phone}</strong> to confirm.</p>
-      <button class="continue-btn" onclick="closeCart()">Continue Shopping</button>
-    </div>`;
 }
 
 function toBase64(file) {

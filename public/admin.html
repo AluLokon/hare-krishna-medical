@@ -279,14 +279,18 @@ button:active {
 
     <div class="orders-section">
       <div class="orders-header">
-        <h2>All Orders (newest first)</h2>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input type="date" id="dateFilter" onchange="applyDateFilter()"
-            style="padding:5px 10px;border-radius:8px;border:1px solid #ddd;font-family:inherit;font-size:13px;">
-          <button class="refresh-btn" onclick="clearDateFilter()">Show All</button>
-          <button class="refresh-btn" onclick="loadOrders()">↻ Refresh</button>
-        </div>
-      </div>
+  <h2>All Orders (newest first)</h2>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <input type="date" id="dateFilter" onchange="applyDateFilter()"
+      style="padding:5px 10px;border-radius:8px;border:1px solid #ddd;font-family:inherit;font-size:13px;">
+    <button class="refresh-btn" onclick="clearDateFilter()">Show All</button>
+    <button class="refresh-btn" onclick="loadOrders()">↻ Refresh</button>
+    <button class="refresh-btn" onclick="exportCSV()"
+      style="background:#EAF3DE;color:#3B6D11;border-color:#C0DD97">
+      ⬇ Download CSV
+    </button>
+  </div>
+</div>
       <div id="ordersList"></div>
       <div class="auto-refresh" id="refreshTimer"></div>
     </div>
@@ -492,55 +496,102 @@ async function loadOrders() {
 }
 
   function renderOrders(orders) {
-    const list = document.getElementById('ordersList');
-    if (!orders.length) {
-      list.innerHTML = '<div class="no-orders">📭 No orders yet.</div>';
-      return;
-    }
-    list.innerHTML = orders.map(order => {
-      const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
-      const time = new Date(order.created_at).toLocaleString('en-IN', {
-        day: '2-digit', month: 'short',
-        hour: '2-digit', minute: '2-digit', hour12: true
-      });
-      const delivered = order.status === 'delivered';
-      return `
-        <div class="order-card ${delivered ? 'delivered' : ''}">
-          <div class="order-top">
-            <div>
-              <div class="order-id">Order #${order.id}</div>
-              <div class="order-name">${order.customer_name}</div>
-              <div class="order-phone">📞 ${order.phone}</div>
-            </div>
-            <div>
-              <div class="order-time">${time}</div>
-              <span class="order-status ${delivered ? 'status-delivered' : 'status-pending'}">
-                ${delivered ? '✓ Delivered' : '⏳ Pending'}
-              </span>
-            </div>
-          </div>
-          <div class="order-items">
-            ${items.map(i => `
-              <div class="order-item-row">
-                💊 ${i.name} × ${i.qty} = ₹${(i.qty * i.price).toFixed(2)}
-              </div>`).join('')}
-          </div>
-          ${order.address ? `<div class="order-address">📍 ${order.address}</div>` : ''}
-          <div class="order-bottom">
-            <div class="order-total">Total: ₹${parseFloat(order.total).toFixed(2)}</div>
-            <div style="display:flex;gap:8px">
-              ${order.prescription
-                ? `<button class="rx-img-btn" onclick="viewPrescription('${order.id}')">📋 View Rx</button>`
-                : ''}
-              <button class="deliver-btn" onclick="markDelivered(${order.id})"
-                ${delivered ? 'disabled' : ''}>
-                ${delivered ? 'Delivered ✓' : 'Mark Delivered'}
-              </button>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
+  const list = document.getElementById('ordersList');
+  if (!orders.length) {
+    list.innerHTML = '<div class="no-orders">📭 No orders yet.</div>';
+    return;
   }
+  list.innerHTML = orders.map(order => {
+    const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
+    const time = new Date(order.created_at).toLocaleString('en-IN', {
+      day: '2-digit', month: 'short',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+
+    const statusConfig = {
+      pending:   { label: '⏳ Pending',   color: '#633806', bg: '#FAEEDA' },
+      confirmed: { label: '✓ Confirmed',  color: '#0C447C', bg: '#E6F1FB' },
+      dispatched:{ label: '🚚 Dispatched', color: '#534AB7', bg: '#EEEDFE' },
+      delivered: { label: '✓ Delivered',  color: '#27500A', bg: '#EAF3DE' },
+    };
+
+    const sc = statusConfig[order.status] || statusConfig.pending;
+
+    // Status progress bar
+    const steps = ['pending', 'confirmed', 'dispatched', 'delivered'];
+    const currentStep = steps.indexOf(order.status);
+    const progressBar = `
+      <div style="display:flex;align-items:center;gap:4px;margin:10px 0">
+        ${steps.map((step, i) => `
+          <div style="flex:1;text-align:center">
+            <div style="width:24px;height:24px;border-radius:50%;margin:0 auto;
+              background:${i <= currentStep ? '#3B6D11' : '#e8e8e8'};
+              display:flex;align-items:center;justify-content:center;
+              font-size:11px;color:${i <= currentStep ? 'white' : '#888'}">
+              ${i <= currentStep ? '✓' : i + 1}
+            </div>
+            <div style="font-size:10px;color:${i <= currentStep ? '#3B6D11' : '#888'};margin-top:3px;text-transform:capitalize">
+              ${step}
+            </div>
+          </div>
+          ${i < steps.length - 1 ? `
+            <div style="flex:2;height:2px;background:${i < currentStep ? '#3B6D11' : '#e8e8e8'};margin-bottom:16px"></div>
+          ` : ''}
+        `).join('')}
+      </div>`;
+
+    // Next status button
+    const nextStatus = steps[currentStep + 1];
+    const nextLabels = {
+      confirmed: '✓ Confirm Order',
+      dispatched: '🚚 Mark Dispatched',
+      delivered: '✓ Mark Delivered'
+    };
+
+    return `
+      <div class="order-card ${order.status === 'delivered' ? 'delivered' : ''}">
+        <div class="order-top">
+          <div>
+            <div class="order-id">Order #${order.id}</div>
+            <div class="order-name">${order.customer_name}</div>
+            <div class="order-phone">📞 ${order.phone}</div>
+          </div>
+          <div>
+            <div class="order-time">${time}</div>
+            <span class="order-status" style="background:${sc.bg};color:${sc.color}">
+              ${sc.label}
+            </span>
+          </div>
+        </div>
+
+        ${progressBar}
+
+        <div class="order-items">
+          ${items.map(i => `
+            <div class="order-item-row">
+              💊 ${i.name} × ${i.qty} = ₹${(i.qty * i.price).toFixed(2)}
+            </div>`).join('')}
+        </div>
+
+        ${order.address ? `<div class="order-address">📍 ${order.address}</div>` : ''}
+
+        <div class="order-bottom">
+          <div class="order-total">Total: ₹${parseFloat(order.total).toFixed(2)}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${order.prescription
+              ? `<button class="rx-img-btn" onclick="viewPrescription('${order.id}')">📋 View Rx</button>`
+              : ''}
+            ${nextStatus
+              ? `<button class="deliver-btn" onclick="updateStatus(${order.id}, '${nextStatus}')">
+                   ${nextLabels[nextStatus]}
+                 </button>`
+              : `<button class="deliver-btn" disabled>Delivered ✓</button>`
+            }
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
 
   function updateStats(orders) {
     const today = new Date().toDateString();
@@ -575,13 +626,33 @@ async function loadOrders() {
   }
 
   async function markDelivered(id) {
-    try {
-      await fetch(`/api/orders/${id}/deliver`, {
-        method: 'PATCH', headers: authHeaders()
-      });
-      loadOrders();
-    } catch (err) { alert('Failed to update order.'); }
+  await updateStatus(id, 'delivered');
+}
+
+async function updateStatus(id, status) {
+  const labels = {
+    confirmed: 'confirm this order?',
+    dispatched: 'mark this order as dispatched?',
+    delivered: 'mark this order as delivered?'
+  };
+  if (!confirm(`Are you sure you want to ${labels[status]}`)) return;
+
+  try {
+    const res = await fetch(`/api/orders/${id}/status`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ status })
+    });
+    if (!res.ok) {
+      alert('Failed to update order status.');
+      return;
+    }
+    loadOrders();
+    loadLowStock();
+  } catch (err) {
+    alert('Failed to update order.');
   }
+}
 
   // View prescription image
   async function viewPrescription(orderId) {
@@ -882,6 +953,42 @@ function renderLowStock(medicines) {
       </span>
     </div>
   `).join('');
+}
+
+
+
+function exportCSV() {
+  const dateInput = document.getElementById('dateFilter');
+  const date = dateInput.value;
+
+  // Build URL with token in header won't work for file download
+  // So we pass token as query param for this one endpoint
+  let url = `/api/orders/export/csv`;
+  if (date) url += `?date=${date}`;
+
+  // Create a temporary link and click it to trigger download
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', '');
+
+  // Add token to request via fetch and create blob
+  fetch(url, { headers: authHeaders() })
+    .then(res => {
+      if (!res.ok) throw new Error('Export failed');
+      return res.blob();
+    })
+    .then(blob => {
+      const blobUrl = URL.createObjectURL(blob);
+      link.href = blobUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    })
+    .catch(err => {
+      alert('Failed to export. Please try again.');
+      console.error(err);
+    });
 }
 </script>
 </body>
