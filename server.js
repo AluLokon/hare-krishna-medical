@@ -8,6 +8,7 @@ require('dotenv').config();
 const medicinesRouter = require('./routes/medicines');
 const ordersRouter = require('./routes/orders');
 const authRouter = require('./routes/auth');
+const { router: customersRouter } = require('./customers');
 const verifyToken = require('./middleware');
 
 const app = express();
@@ -66,6 +67,7 @@ app.use('/api/', apiLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/medicines', medicinesRouter);
 app.use('/api/orders', ordersRouter);
+app.use('/api/customers', customersRouter);
 
 // ── Fix 6: Global error handler — hide stack traces ──
 app.use((err, req, res, next) => {

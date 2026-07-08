@@ -246,8 +246,10 @@ const hasRx = ids.some(k => {
       <input type="text" id="custName" placeholder="e.g. Ramesh Kumar">
       <label>Phone number *</label>
       <input type="tel" id="custPhone" placeholder="WhatsApp number">
+      <label>Email (optional — for order confirmation)</label>
+      <input type="email" id="custEmail" placeholder="yourname@gmail.com">
       <label>Delivery address</label>
-      <textarea id="custAddress" placeholder="House no., street, landmark..."></textarea>
+      <textarea id="custAddress" placeholder="House no., street, landmark...">${getCustomerAddress()}</textarea>
       <label>Extra notes</label>
       <textarea id="custNotes" placeholder="Any other instructions?" rows="2"></textarea>
       <button class="place-order-btn" onclick="placeOrder(${hasRx})">Place Order →</button>
@@ -266,6 +268,7 @@ async function placeOrder(hasRx) {
   const phone   = document.getElementById('custPhone').value.trim();
   const address = document.getElementById('custAddress').value.trim();
   const notes   = document.getElementById('custNotes').value.trim();
+  const email   = document.getElementById('custEmail').value.trim();
 
   if (!name || !phone) {
     alert('Please enter your name and phone number.');
@@ -308,6 +311,7 @@ try {
       body: JSON.stringify({
         customer_name: name,
         phone: phone,
+        email: email,
         address: address + (notes ? '\nNotes: ' + notes : ''),
         items: items,
         total: total,
@@ -335,6 +339,7 @@ try {
         <p>Thank you ${name}!<br>
         Sitaram Medical Store will call you on <strong>${phone}</strong> to confirm.</p>
         <p style="font-size:12px;color:#888;margin-top:8px">Save your Order ID to track your order status.</p>
+<p style="font-size:12px;color:#e07b00;margin-top:6px">📧 Check your spam/junk folder if you don't see the confirmation email.</p>
         <button class="continue-btn" onclick="closeCart()">Continue Shopping</button>
       </div>`;
 
@@ -403,4 +408,14 @@ async function loadCategories() {
   } catch (err) {
     console.error('Failed to load categories', err);
   }
+}
+
+
+function getCustomerAddress() {
+  const data = localStorage.getItem('customerData');
+  if (data) {
+    const customer = JSON.parse(data);
+    return customer.address || '';
+  }
+  return '';
 }

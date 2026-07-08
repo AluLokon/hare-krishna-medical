@@ -1,3 +1,5 @@
+const { sendOrderConfirmation, sendAdminNotification } = require('../email');
+const { verifyCustomer } = require('../customers');
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
@@ -65,10 +67,24 @@ router.post('/', orderValidation, async (req, res) => {
       );
     }
 
+    // Get customer_id from token if logged in
+    const authHeader = req.headers['authorization'];
+    let customer_id = null;
+    if (authHeader) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        customer_id = decoded.id;
+      } catch (e) {
+        // Not logged in — guest order, that's fine
+      }
+    }
+
     const result = await client.query(
       `INSERT INTO orders
-        (customer_name, phone, address, items, total, prescription, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending')
+        (customer_name, phone, address, items, total, prescription, status, customer_id)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7)
        RETURNING id`,
       [
         customer_name,
@@ -76,12 +92,23 @@ router.post('/', orderValidation, async (req, res) => {
         address || '',
         JSON.stringify(items),
         total,
-        prescription || null
+        prescription || null,
+        customer_id
       ]
     );
 
     await client.query('COMMIT');
-    res.json({ success: true, order_id: result.rows[0].id });
+
+    const orderId = result.rows[0].id;
+
+    // Send emails in background (don't wait — order already saved)
+    const customerEmail = req.body.email;
+    if (customerEmail) {
+      sendOrderConfirmation(customerEmail, customer_name, orderId, items, total);
+    }
+    sendAdminNotification(orderId, customer_name, phone, items, total);
+
+    res.json({ success: true, order_id: orderId });
 
   } catch (err) {
     await client.query('ROLLBACK');
