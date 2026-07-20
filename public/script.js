@@ -6,6 +6,137 @@ let currentCat = 'all';
 let searchMode = false;
 let searchTimeout = null;
 
+
+// ── Razorpay Online Payment ──
+async function placeOrderOnline(hasRx) {
+  const name    = document.getElementById('custName').value.trim();
+  const phone   = document.getElementById('custPhone').value.trim();
+  const address = document.getElementById('custAddress').value.trim();
+  const notes   = document.getElementById('custNotes').value.trim();
+  const email   = document.getElementById('custEmail').value.trim();
+
+  if (!name || !phone) {
+    alert('Please enter your name and phone number.');
+    return;
+  }
+
+  if (hasRx) {
+    const fileInput = document.getElementById('prescriptionFile');
+    if (!fileInput || !fileInput.files.length) {
+      alert('Please upload your prescription for Rx medicines.');
+      return;
+    }
+  }
+
+  const ids = Object.keys(cart).filter(k => cart[k] > 0);
+  const items = ids.map(k => {
+    const med = medicineCache[k];
+    return { id: parseInt(k), name: med.name, qty: cart[k], price: med.price };
+  });
+
+  // Handle prescription
+  let prescriptionData = null;
+  if (hasRx) {
+    const fileInput = document.getElementById('prescriptionFile');
+    if (fileInput && fileInput.files.length) {
+      prescriptionData = await toBase64(fileInput.files[0]);
+    }
+  }
+
+  try {
+    // Step 1 — Create Razorpay order from backend
+    const createRes = await fetch('/api/payment/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+
+    const createData = await createRes.json();
+
+    if (!createRes.ok) {
+      alert(createData.error || 'Failed to initiate payment.');
+      return;
+    }
+
+    // Step 2 — Open Razorpay checkout
+    const options = {
+      key: createData.key_id,
+      amount: createData.amount,
+      currency: 'INR',
+      name: 'Sitaram Medical Store',
+      description: 'Medicine Order',
+      order_id: createData.razorpay_order_id,
+      prefill: {
+        name: name,
+        contact: phone,
+        email: email || ''
+      },
+      theme: { color: '#3B6D11' },
+
+      handler: async function(response) {
+        // Step 3 — Verify payment on backend
+        const customerToken = localStorage.getItem('customerToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (customerToken) headers['Authorization'] = `Bearer ${customerToken}`;
+
+        const verifyRes = await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            order_data: {
+              customer_name: name,
+              phone: phone,
+              email: email,
+              address: address + (notes ? '\nNotes: ' + notes : ''),
+              items: createData.verified_items,
+              prescription: prescriptionData
+            }
+          })
+        });
+
+        const verifyData = await verifyRes.json();
+
+        if (!verifyRes.ok || !verifyData.success) {
+          alert(verifyData.error || 'Payment verification failed. Please contact the store.');
+          return;
+        }
+
+        // Step 4 — Show success
+        const orderId = verifyData.order_id;
+        cart = {};
+        updateCartBar();
+        document.getElementById('cartContent').innerHTML = `
+          <div class="order-success">
+            <div class="tick">✅</div>
+            <h3>Payment Successful!</h3>
+            <p style="font-size:13px;color:#777;margin-bottom:8px">Order ID</p>
+            <div style="font-size:28px;font-weight:600;color:#3B6D11;margin-bottom:12px">#${orderId}</div>
+            <p>Thank you ${name}!<br>
+            Payment received. Sitaram Medical Store will deliver your order soon.</p>
+            <p style="font-size:12px;color:#2563EB;margin-top:8px">💳 Paid Online</p>
+            <button class="continue-btn" onclick="closeCart()">Continue Shopping</button>
+          </div>`;
+      },
+
+      modal: {
+        ondismiss: function() {
+          alert('Payment cancelled. Your order was not placed.');
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    console.error('Payment error:', err);
+    alert('Something went wrong. Please try again or use Cash on Delivery.');
+  }
+}
+
 // When page loads — show only featured medicines
 async function loadMedicines() {
   try {
@@ -252,7 +383,19 @@ const hasRx = ids.some(k => {
       <textarea id="custAddress" placeholder="House no., street, landmark...">${getCustomerAddress()}</textarea>
       <label>Extra notes</label>
       <textarea id="custNotes" placeholder="Any other instructions?" rows="2"></textarea>
-      <button class="place-order-btn" onclick="placeOrder(${hasRx})">Place Order →</button>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        <button class="place-order-btn"
+          onclick="placeOrderOnline(${hasRx})"
+          style="background:#2563EB">
+          💳 Pay Online (UPI / Card / NetBanking)
+        </button>
+        <button class="place-order-btn"
+          onclick="placeOrder(${hasRx})"
+          style="background:#3B6D11">
+          🏠 Cash on Delivery
+        </button>
+      </div>
     </div>`;
 }
 
@@ -305,9 +448,17 @@ const items = ids.map(k => {
   }
 
 try {
+    // Get customer token if logged in
+    const customerToken = localStorage.getItem('customerToken');
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (customerToken) {
+      headers['Authorization'] = `Bearer ${customerToken}`;
+    }
+
     const res = await fetch('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       body: JSON.stringify({
         customer_name: name,
         phone: phone,

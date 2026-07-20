@@ -270,6 +270,10 @@
 
   // Check if already logged in
   window.onload = function() {
+    customerToken = localStorage.getItem('customerToken');
+    customerData = JSON.parse(localStorage.getItem('customerData') || 'null');
+    console.log('Page loaded. Token:', customerToken ? 'exists' : 'missing');
+    console.log('Customer data:', customerData);
     if (customerToken && customerData) {
       showDashboard();
     }
@@ -391,24 +395,31 @@
 
   // Load order history
   async function loadOrderHistory() {
-    try {
-      const res = await fetch('/api/customers/orders', {
-        headers: { 'Authorization': `Bearer ${customerToken}` }
-      });
+  try {
+    const token = localStorage.getItem('customerToken');
+    console.log('Loading orders with token:', token ? 'exists' : 'missing');
 
-      if (res.status === 401 || res.status === 403) {
-        logout();
-        return;
-      }
+    const res = await fetch('/api/customers/orders', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
 
-      const orders = await res.json();
-      renderOrderHistory(orders);
+    console.log('Orders response status:', res.status);
 
-    } catch (err) {
-      document.getElementById('orderHistory').innerHTML =
-        '<p style="color:red;font-size:14px">Failed to load orders.</p>';
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      return;
     }
+
+    const orders = await res.json();
+    console.log('Orders received:', orders);
+    renderOrderHistory(orders);
+
+  } catch (err) {
+    console.error('loadOrderHistory error:', err);
+    document.getElementById('orderHistory').innerHTML =
+      '<p style="color:red;font-size:14px">Failed to load orders.</p>';
   }
+}
 
   // Render order history
   function renderOrderHistory(orders) {
@@ -455,6 +466,21 @@
 
       const statusClass = `status-${order.status}`;
 
+      // Show prescription status if relevant
+    const rxStatusHtml = order.prescription_status === 'pending_approval'
+      ? `<div style="background:#FAEEDA;color:#633806;font-size:12px;padding:6px 10px;border-radius:8px;margin:8px 0">
+           ⏳ Your prescription is being reviewed by the pharmacist.
+         </div>`
+      : order.prescription_status === 'approved'
+      ? `<div style="background:#EAF3DE;color:#27500A;font-size:12px;padding:6px 10px;border-radius:8px;margin:8px 0">
+           ✓ Prescription approved. Order confirmed!
+         </div>`
+      : order.prescription_status === 'rejected'
+      ? `<div style="background:#FCEBEB;color:#A32D2D;font-size:12px;padding:6px 10px;border-radius:8px;margin:8px 0">
+           ✗ Prescription rejected. Please contact the store: 78468 70485
+         </div>`
+      : '';
+
       return `
         <div class="order-card">
           <div class="order-header">
@@ -465,6 +491,7 @@
             <span class="order-status ${statusClass}">${order.status}</span>
           </div>
           ${progressBar}
+          ${rxStatusHtml}
           <div class="order-items">
             ${items.map(i => `
               <div class="order-item-row">

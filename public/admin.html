@@ -596,6 +596,15 @@ async function loadOrders() {
 
     const sc = statusConfig[order.status] || statusConfig.pending;
 
+    // Rx badge
+    const rxBadge = order.prescription_status === 'pending_approval'
+      ? `<span style="background:#FAEEDA;color:#633806;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;margin-left:6px">⚠️ Rx Pending</span>`
+      : order.prescription_status === 'approved'
+      ? `<span style="background:#EAF3DE;color:#27500A;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;margin-left:6px">✓ Rx Approved</span>`
+      : order.prescription_status === 'rejected'
+      ? `<span style="background:#FCEBEB;color:#A32D2D;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;margin-left:6px">✗ Rx Rejected</span>`
+      : '';
+
     // Status progress bar
     const steps = ['pending', 'confirmed', 'dispatched', 'delivered'];
     const currentStep = steps.indexOf(order.status);
@@ -632,7 +641,7 @@ async function loadOrders() {
         <div class="order-top">
           <div>
             <div class="order-id">Order #${order.id}</div>
-            <div class="order-name">${order.customer_name}</div>
+            <div class="order-name">${order.customer_name} ${rxBadge}</div>
             <div class="order-phone">📞 ${order.phone}</div>
           </div>
           <div>
@@ -654,18 +663,47 @@ async function loadOrders() {
 
         ${order.address ? `<div class="order-address">📍 ${order.address}</div>` : ''}
 
+        <div style="font-size:12px;margin-top:4px">
+  ${order.payment_method === 'online'
+    ? `<span style="background:#EEF2FF;color:#3730A3;padding:2px 8px;border-radius:12px;font-size:11px">💳 Paid Online</span>`
+    : `<span style="background:#F5F5F5;color:#555;padding:2px 8px;border-radius:12px;font-size:11px">🏠 Cash on Delivery</span>`
+  }
+  ${order.razorpay_payment_id
+    ? `<span style="color:#777;font-size:11px;margin-left:6px">ID: ${order.razorpay_payment_id}</span>`
+    : ''
+  }
+</div>
+
         <div class="order-bottom">
           <div class="order-total">Total: ₹${parseFloat(order.total).toFixed(2)}</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             ${order.prescription
-              ? `<button class="rx-img-btn" onclick="viewPrescription('${order.id}')">📋 View Rx</button>`
+              ? `<button class="rx-img-btn" onclick="viewPrescription(${order.id})">📋 View Rx</button>`
               : ''}
-            ${nextStatus
-              ? `<button class="deliver-btn" onclick="updateStatus(${order.id}, '${nextStatus}')">
-                   ${nextLabels[nextStatus]}
-                 </button>`
-              : `<button class="deliver-btn" disabled>Delivered ✓</button>`
-            }
+            ${order.prescription_status === 'pending_approval' ? `
+      <button class="deliver-btn"
+        style="background:#27500A"
+        onclick="approvePrescription(${order.id})">
+        ✓ Approve Rx
+      </button>
+      <button class="deliver-btn"
+        style="background:#A32D2D"
+        onclick="rejectPrescription(${order.id})">
+        ✗ Reject Rx
+      </button>
+    ` : order.prescription_status === 'rejected' ? `
+      <button class="deliver-btn" disabled
+        style="background:#888;cursor:not-allowed">
+        ✗ Rx Rejected
+      </button>
+    ` : `
+      ${nextStatus
+        ? `<button class="deliver-btn" onclick="updateStatus(${order.id}, '${nextStatus}')">
+             ${nextLabels[nextStatus]}
+           </button>`
+        : `<button class="deliver-btn" disabled>Delivered ✓</button>`
+      }
+    `}
           </div>
         </div>
       </div>`;
@@ -735,12 +773,31 @@ async function updateStatus(id, status) {
 
   // View prescription image
   async function viewPrescription(orderId) {
-    const order = allOrders.find(o => o.id == orderId);
-    if (!order || !order.prescription) return;
-    document.getElementById('rxContent').innerHTML =
-      `<img src="${order.prescription}" class="rx-image" alt="Prescription">`;
-    document.getElementById('rxModal').classList.add('open');
+  const order = allOrders.find(o => o.id == orderId);
+  if (!order || !order.prescription) {
+    alert('No prescription found for this order.');
+    return;
   }
+  const isPdf = order.prescription.startsWith('data:application/pdf');
+  document.getElementById('rxContent').innerHTML = isPdf
+    ? `<p style="font-size:13px;color:#555;margin-bottom:1rem">This prescription is a PDF file.</p>
+       <a href="${order.prescription}" download="prescription.pdf"
+         style="background:#3B6D11;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:14px">
+         ⬇ Download PDF
+       </a>`
+    : `<img src="${order.prescription}" class="rx-image" alt="Prescription">
+       <div style="margin-top:8px;display:flex;gap:8px">
+         <button onclick="approvePrescription(${orderId});closeRxModal()"
+           style="flex:1;background:#27500A;color:white;border:none;padding:8px;border-radius:8px;cursor:pointer;font-size:13px">
+           ✓ Approve
+         </button>
+         <button onclick="rejectPrescription(${orderId});closeRxModal()"
+           style="flex:1;background:#A32D2D;color:white;border:none;padding:8px;border-radius:8px;cursor:pointer;font-size:13px">
+           ✗ Reject
+         </button>
+       </div>`;
+  document.getElementById('rxModal').classList.add('open');
+}
 
   function closeRxModal() {
     document.getElementById('rxModal').classList.remove('open');
@@ -1068,6 +1125,41 @@ function exportCSV() {
       alert('Failed to export. Please try again.');
       console.error(err);
     });
+}
+
+
+async function approvePrescription(id) {
+  if (!confirm('Approve this prescription and confirm the order?')) return;
+  try {
+    const res = await fetch(`/api/orders/${id}/prescription/approve`, {
+      method: 'PATCH',
+      headers: authHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error); return; }
+    alert('✓ Prescription approved! Order confirmed.');
+    loadOrders();
+  } catch (err) {
+    alert('Failed to approve prescription.');
+  }
+}
+
+async function rejectPrescription(id) {
+  const reason = prompt('Reason for rejection (shown to store record):') || 'Invalid prescription';
+  if (reason === null) return; // cancelled
+  try {
+    const res = await fetch(`/api/orders/${id}/prescription/reject`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ reason })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error); return; }
+    alert('✗ Prescription rejected. Stock has been restored.');
+    loadOrders();
+  } catch (err) {
+    alert('Failed to reject prescription.');
+  }
 }
 </script>
 </body>

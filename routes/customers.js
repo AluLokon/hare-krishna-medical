@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('./db');
+const pool = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
@@ -140,8 +140,8 @@ router.get('/me', verifyCustomer, async (req, res) => {
 router.get('/orders', verifyCustomer, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, customer_name, items, total, status, created_at,
-              confirmed_at, dispatched_at, delivered_at
+      `SELECT id, customer_name, items, total, status, prescription_status,
+              created_at, confirmed_at, dispatched_at, delivered_at
        FROM orders
        WHERE customer_id = $1
        ORDER BY created_at DESC`,
