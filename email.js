@@ -3,15 +3,12 @@ require('dotenv').config();
 
 // Create transporter using Gmail
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
+  host: 'smtp-relay.brevo.com',
   port: 587,
   secure: false,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
+    user: process.env.BREVO_USER,
+    pass: process.env.BREVO_PASS
   }
 });
 
@@ -97,16 +94,16 @@ async function sendOrderConfirmation(customerEmail, customerName, orderId, items
 
   try {
     await transporter.sendMail({
-      from: `"Sitaram Medical Store" <${process.env.EMAIL_USER}>`,
-      to: customerEmail,
-      subject: `Order #${orderId} Confirmed — Sitaram Medical Store`,
-      html: html,
-      headers: {
-        'X-Priority': '1',
-        'X-Mailer': 'Sitaram Medical Store',
-        'List-Unsubscribe': `<mailto:${process.env.EMAIL_USER}>`
-      }
-    });
+    from: `"Sitaram Medical Store" <${process.env.EMAIL_FROM}>`,
+    to: customerEmail,
+    subject: `Order #${orderId} Confirmed — Sitaram Medical Store`,
+    html: html,
+    headers: {
+    'X-Priority': '1',
+    'X-Mailer': 'Sitaram Medical Store',
+    'List-Unsubscribe': `<mailto:${process.env.EMAIL_FROM}>`
+  }
+});
     console.log(`Order confirmation email sent to ${customerEmail}`);
   } catch (err) {
     // Don't crash the order if email fails — just log it
@@ -142,11 +139,11 @@ async function sendAdminNotification(orderId, customerName, phone, items, total)
 
   try {
     await transporter.sendMail({
-      from: `"Sitaram Medical Store" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: `🛎️ New Order #${orderId} from ${customerName}`,
-      html: html
-    });
+  from: `"Sitaram Medical Store" <${process.env.EMAIL_FROM}>`,
+  to: process.env.EMAIL_FROM,
+  subject: `🛎️ New Order #${orderId} from ${customerName}`,
+  html: html
+});
   } catch (err) {
     console.error('Admin notification email failed:', err.message);
   }

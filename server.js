@@ -13,6 +13,7 @@ const paymentRouter = require('./routes/payment');
 const verifyToken = require('./middleware');
 
 const app = express();
+app.set('trust proxy', 1); 
 const PORT = process.env.PORT || 3000;
 
 // ── Fix 1: Helmet — security headers ──

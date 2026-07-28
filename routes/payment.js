@@ -196,7 +196,7 @@ router.post('/verify', async (req, res) => {
     );
 
     await client.query('COMMIT');
-
+                          
     const orderId = orderResult.rows[0].id;
 
     // Send emails
