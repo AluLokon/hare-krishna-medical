@@ -75,7 +75,7 @@ router.get('/search', async (req, res) => {
       params.push(category);
       query += ` AND category = $${params.length}`;
     }
-    query += ' ORDER BY name ASC LIMIT 50';
+    query += ' ORDER BY (stock > 0) DESC, featured DESC, name ASC LIMIT 20';
 
     const result = await pool.query(query, params);
     res.json(result.rows);
