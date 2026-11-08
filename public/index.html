@@ -2,457 +2,125 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Sitaram Medical Store</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
-  <style>
-    /* ── Design tokens ── */
-    :root {
-      --green-dark:  #0f5c3a;
-      --green-mid:   #1a7a4e;
-      --green-light: #e8f5ee;
-      --green-muted: #c6e8d4;
-      --accent:      #f59e0b;
-      --accent-bg:   #fffbeb;
-      --bg:          #f4f6f4;
-      --surface:     #ffffff;
-      --border:      #e2e8e3;
-      --text-1:      #111a14;
-      --text-2:      #4a5c50;
-      --text-3:      #8a9e90;
-      --danger:      #dc2626;
-      --danger-bg:   #fef2f2;
-      --shadow-sm:   0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
-      --shadow-md:   0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
-      --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
-      --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-      --font-body:    'Inter', system-ui, sans-serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) {
-        --bg: #0d1510; --surface: #162019; --border: #243328;
-        --text-1: #e8f0ea; --text-2: #8dab95; --text-3: #4a6652;
-        --green-light: #162a1e; --green-muted: #1e3828;
-        --accent-bg: #1f1a0a; --danger-bg: #1f0a0a;
-        color-scheme: dark;
-      }
-    }
-    :root[data-theme="dark"] {
-      --bg: #0d1510; --surface: #162019; --border: #243328;
-      --text-1: #e8f0ea; --text-2: #8dab95; --text-3: #4a6652;
-      --green-light: #162a1e; --green-muted: #1e3828;
-      --accent-bg: #1f1a0a; --danger-bg: #1f0a0a;
-      color-scheme: dark;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font-body);
-      background: var(--bg);
-      color: var(--text-1);
-      min-height: 100vh;
-    }
-
-    /* ── HEADER ── */
-    header {
-      background: linear-gradient(150deg, #0a4229 0%, var(--green-mid) 100%);
-      color: white;
-      padding: 1.1rem 1.25rem 0;
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      box-shadow: 0 2px 16px rgba(0,0,0,.2);
-    }
-    .header-top {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      margin-bottom: 0.9rem;
-    }
-    .logo-mark {
-      width: 42px; height: 42px;
-      background: rgba(255,255,255,.15);
-      border-radius: 11px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; flex-shrink: 0;
-      border: 1px solid rgba(255,255,255,.2);
-    }
-    .store-info { flex: 1; min-width: 0; }
-    .store-name {
-      font-family: var(--font-display);
-      font-size: 17px; font-weight: 700;
-      letter-spacing: -.01em;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .store-sub {
-      font-size: 11px; opacity: .75; margin-top: 1px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .btn-account {
-      display: flex; align-items: center; gap: 5px;
-      background: rgba(255,255,255,.15);
-      border: 1px solid rgba(255,255,255,.25);
-      color: white; border-radius: 8px;
-      padding: 6px 11px; font-size: 12px; font-weight: 500;
-      cursor: pointer; white-space: nowrap;
-      font-family: var(--font-body);
-      text-decoration: none;
-    }
-    .btn-account:hover { background: rgba(255,255,255,.22); }
-
-    .search-wrap { display: flex; gap: 8px; padding-bottom: 1rem; }
-    .search-wrap input {
-      flex: 1; padding: .65rem 1rem;
-      border-radius: var(--r-md); border: none;
-      font-size: 14px; font-family: var(--font-body);
-      background: rgba(255,255,255,.95); color: var(--text-1);
-      outline: none;
-    }
-    .search-wrap input::placeholder { color: #9bb5a4; }
-    .search-wrap input:focus { box-shadow: 0 0 0 3px rgba(255,255,255,.3); }
-    .search-btn {
-      padding: .65rem 1.1rem; border-radius: var(--r-md);
-      border: none; background: var(--accent); color: #1a0e00;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      font-family: var(--font-body); white-space: nowrap;
-    }
-    .search-btn:hover { background: #e08e00; }
-
-    /* ── CATEGORY NAV ── */
-    nav {
-      display: flex; gap: 7px;
-      padding: .9rem 1.25rem .75rem;
-      overflow-x: auto; scrollbar-width: none;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
-    nav::-webkit-scrollbar { display: none; }
-    .nav-btn {
-      padding: 6px 15px; border-radius: 100px;
-      border: 1.5px solid var(--border);
-      background: var(--bg); color: var(--text-2);
-      font-size: 12.5px; font-weight: 500;
-      cursor: pointer; white-space: nowrap;
-      font-family: var(--font-body);
-      transition: all .15s;
-    }
-    .nav-btn:hover { border-color: var(--green-mid); color: var(--green-dark); }
-    .nav-btn.active { background: var(--green-dark); color: white; border-color: var(--green-dark); }
-
-    /* ── MAIN CONTENT ── */
-    .page-body { padding: 0 1.25rem; }
-
-    /* ── BANNERS ── */
-    .banners { display: flex; flex-direction: column; gap: 8px; margin: 1rem 0; }
-    .banner {
-      display: flex; align-items: center; gap: 10px;
-      padding: 11px 14px; border-radius: var(--r-md);
-      font-size: 13px; font-weight: 500; border: 1px solid;
-    }
-    .banner-delivery { background: var(--green-light); border-color: var(--green-muted); color: var(--green-dark); }
-    .banner-offer    { background: var(--accent-bg);   border-color: #fde68a;            color: #92400e; }
-
-    /* ── SECTION LABEL ── */
-    .section-title {
-      font-family: var(--font-display);
-      font-size: 15px; font-weight: 700;
-      color: var(--text-1);
-      margin: 1.1rem 0 .85rem;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .section-title .count { color: var(--text-3); font-size: 13px; font-weight: 400; }
-
-    /* ── PRODUCTS GRID ── */
-    .products {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
-      gap: 10px;
-      padding-bottom: 6rem;
-    }
-
-    /* ── PRODUCT CARD ── */
-    .product-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: 13px 12px 11px;
-      display: flex; flex-direction: column;
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow .15s, border-color .15s, transform .12s;
-    }
-    .product-card:hover {
-      box-shadow: var(--shadow-md);
-      border-color: var(--green-muted);
-      transform: translateY(-1px);
-    }
-    .product-card.no-stock { opacity: .65; }
-
-    .card-top {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      margin-bottom: 9px;
-    }
-    .card-icon {
-      width: 40px; height: 40px;
-      background: var(--green-light);
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
-    }
-    .rx-badge {
-      font-size: 9px; font-weight: 700; letter-spacing: .04em;
-      background: var(--danger-bg); color: var(--danger);
-      border-radius: 4px; padding: 2px 5px;
-      border: 1px solid #fecaca;
-    }
-
-    .product-name {
-      font-family: var(--font-display);
-      font-size: 12.5px; font-weight: 600; line-height: 1.35;
-      color: var(--text-1); margin-bottom: 3px;
-      display: -webkit-box; -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .product-brand {
-      font-size: 10.5px; color: var(--text-3);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      margin-bottom: 9px;
-    }
-    .product-footer {
-      display: flex; align-items: center;
-      justify-content: space-between; margin-top: auto;
-    }
-    .product-price {
-      font-family: var(--font-display);
-      font-size: 15px; font-weight: 700;
-      color: var(--green-dark);
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Add button */
-    .add-btn {
-      background: var(--green-light); color: var(--green-dark);
-      border: 1.5px solid var(--green-muted);
-      border-radius: 7px; font-size: 11.5px; font-weight: 600;
-      padding: 5px 10px; cursor: pointer;
-      font-family: var(--font-body);
-      transition: all .12s; white-space: nowrap;
-    }
-    .add-btn:hover { background: var(--green-mid); color: white; border-color: var(--green-mid); }
-    .add-btn.added { background: var(--green-dark); color: white; border-color: var(--green-dark); }
-    .add-btn.out-of-stock {
-      background: var(--bg); color: var(--text-3);
-      border-color: var(--border); cursor: not-allowed;
-    }
-
-    /* Qty control on card */
-    .qty-control {
-      display: flex; align-items: center;
-      border: 1.5px solid var(--green-mid);
-      border-radius: 7px; overflow: hidden;
-    }
-    .qty-minus, .qty-plus {
-      background: var(--green-dark); color: white;
-      border: none; width: 26px; height: 26px;
-      font-size: 15px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-body);
-    }
-    .qty-minus:hover, .qty-plus:hover { background: var(--green-mid); }
-    .qty-display {
-      min-width: 26px; text-align: center;
-      font-size: 12.5px; font-weight: 600;
-      color: var(--green-dark); background: var(--green-light);
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Loading state */
-    .loading { color: var(--text-3); font-size: 14px; text-align: center; padding: 2rem; grid-column: 1/-1; }
-
-    /* ── CART BAR ── */
-    .cart-bar {
-      position: fixed; bottom: 1rem;
-      left: 50%; transform: translateX(-50%);
-      width: calc(100% - 2rem); max-width: 540px;
-      background: var(--green-dark); color: white;
-      border-radius: var(--r-lg); padding: 13px 16px;
-      display: flex; align-items: center; justify-content: space-between;
-      cursor: pointer;
-      box-shadow: 0 6px 24px rgba(15,92,58,.4);
-      z-index: 50;
-    }
-    .cart-bar.hidden { display: none; }
-    .cart-count { font-size: 11.5px; opacity: .8; margin-bottom: 1px; }
-    .cart-total { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
-    .checkout-btn {
-      background: white; color: var(--green-dark);
-      border: none; padding: 9px 18px;
-      border-radius: var(--r-sm); font-weight: 700;
-      font-size: 13px; cursor: pointer;
-      font-family: var(--font-display); white-space: nowrap;
-    }
-
-    /* ── MODAL ── */
-    .modal-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.5); z-index: 100;
-      align-items: flex-end; justify-content: center;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal {
-      background: var(--surface);
-      border-radius: var(--r-xl) var(--r-xl) 0 0;
-      width: 100%; max-width: 540px;
-      max-height: 90vh; overflow-y: auto;
-      padding: 1.5rem 1.25rem 2rem;
-      box-shadow: 0 -4px 32px rgba(0,0,0,.18);
-    }
-    .modal-handle {
-      width: 36px; height: 4px;
-      background: var(--border); border-radius: 2px;
-      margin: 0 auto 1.25rem;
-    }
-    .modal h2 {
-      font-family: var(--font-display);
-      font-size: 20px; font-weight: 700; margin-bottom: 1rem;
-    }
-    .modal-close {
-      float: right; background: var(--bg);
-      border: 1px solid var(--border); border-radius: 6px;
-      width: 28px; height: 28px; font-size: 16px;
-      cursor: pointer; color: var(--text-2);
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .cart-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 11px 0; border-bottom: 1px solid var(--border); gap: 8px;
-    }
-    .cart-item-name { font-size: 13.5px; font-weight: 600; }
-    .cart-item-price { color: var(--green-dark); font-weight: 500; }
-    .qty-controls { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
-    .qty-btn {
-      width: 28px; height: 28px; border-radius: 7px;
-      border: 1.5px solid var(--border); background: var(--bg);
-      cursor: pointer; font-size: 16px; color: var(--text-1);
-      display: flex; align-items: center; justify-content: center;
-    }
-    .qty-btn:hover { border-color: var(--green-mid); }
-    .qty-num { font-size: 14px; font-weight: 600; min-width: 20px; text-align: center; }
-    .total-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 0 4px;
-      font-family: var(--font-display);
-      font-size: 17px; font-weight: 700;
-    }
-
-    /* Order form */
-    .order-form { margin-top: 1rem; display: flex; flex-direction: column; gap: 10px; }
-    .order-form label { font-size: 12px; font-weight: 500; color: var(--text-2); margin-bottom: 3px; display: block; }
-    .order-form input, .order-form textarea {
-      padding: .65rem .9rem; border-radius: var(--r-sm);
-      border: 1.5px solid var(--border);
-      font-size: 14px; font-family: var(--font-body);
-      width: 100%; background: var(--bg); color: var(--text-1); outline: none;
-      transition: border-color .15s;
-    }
-    .order-form input:focus, .order-form textarea:focus {
-      border-color: var(--green-mid); background: var(--surface);
-    }
-    .order-form textarea { resize: vertical; min-height: 60px; }
-    .place-order-btn {
-      background: var(--green-dark); color: white; border: none;
-      padding: .9rem; border-radius: var(--r-md);
-      font-family: var(--font-display);
-      font-size: 15px; font-weight: 700;
-      cursor: pointer; margin-top: 6px; transition: background .15s;
-    }
-    .place-order-btn:hover { background: var(--green-mid); }
-
-    /* Success */
-    .order-success { text-align: center; padding: 2rem 1rem; }
-    .order-success .tick { font-size: 52px; margin-bottom: 1rem; }
-    .order-success h3 {
-      font-family: var(--font-display);
-      font-size: 22px; font-weight: 700; margin-bottom: .5rem;
-    }
-    .order-success p { color: var(--text-2); font-size: 14px; line-height: 1.6; }
-    .continue-btn {
-      margin-top: 1.5rem; background: var(--green-dark); color: white;
-      border: none; padding: .65rem 1.75rem;
-      border-radius: var(--r-md);
-      font-family: var(--font-display);
-      font-size: 14px; font-weight: 600; cursor: pointer;
-    }
-
-    /* Footer */
-    footer {
-      text-align: center;
-      padding: 1.75rem 1.25rem;
-      border-top: 1px solid var(--border);
-      color: var(--text-3); font-size: 12px; line-height: 1.9;
-      background: var(--surface); margin-top: 1rem;
-    }
-    footer strong { color: var(--text-2); font-size: 13px; }
-
-    /* ── MOBILE ── */
-    @media (max-width: 600px) {
-      .products { grid-template-columns: 1fr 1fr; gap: 8px; }
-      .product-name { font-size: 12px; }
-      .product-price { font-size: 14px; }
-      .add-btn { font-size: 11px; padding: 4px 8px; }
-      .card-icon { width: 36px; height: 36px; font-size: 18px; }
-      .store-name { font-size: 15px; }
-      nav { padding: .65rem 1rem .6rem; }
-      .page-body { padding: 0 .9rem; }
-      .cart-bar { width: calc(100% - 1.5rem); bottom: .75rem; }
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sitaram Medical Store — Digapahandi</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <span>📍 Old Bus Stand, Digapahandi-761012, Ganjam, Odisha</span>
+    <span>📞 78468 70485 &nbsp;|&nbsp; 88988 70485</span>
+  </div>
+
   <!-- HEADER -->
   <header>
-    <div class="header-top">
-      <div class="logo-mark">🏥</div>
-      <div class="store-info">
-        <div class="store-name">Sitaram Medical Store</div>
-        <div class="store-sub">Chemist &amp; Druggist · Digapahandi, Ganjam</div>
+    <div class="header-inner">
+      <a class="logo-wrap" href="/">
+        <div class="logo-icon">💊</div>
+        <div class="logo-text">
+          <strong>Sitaram Medical Store</strong>
+          <span>Chemist &amp; Druggist · Digapahandi, Ganjam</span>
+        </div>
+      </a>
+
+      <div class="search-wrap">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search medicines, health products..."
+          autocomplete="off"
+        >
+        <button onclick="filterProducts()">
+          🔍 Search
+        </button>
       </div>
-      <a href="/account.html" class="btn-account">👤 Account</a>
-    </div>
-    <div class="search-wrap">
-      <input type="text" id="searchInput" placeholder="Search medicines, brands…" autocomplete="off">
-      <button class="search-btn" onclick="filterProducts()">🔍 Search</button>
+
+      <div class="header-actions">
+        <a href="/account.html">
+          <span>👤</span><span>My Account</span>
+        </a>
+      </div>
     </div>
   </header>
 
   <!-- CATEGORY NAV -->
-  <nav id="catNav">
-    <button class="nav-btn active" onclick="filterCat('all', this)">All</button>
-  </nav>
+  <div class="cat-nav-wrap">
+    <nav class="cat-nav" id="catNav">
+      <button class="nav-btn active" onclick="filterCat('all', this)">All</button>
+    </nav>
+  </div>
 
-  <!-- MAIN CONTENT -->
-  <div class="page-body">
+  <!-- MAIN -->
+  <div class="main-content">
 
     <!-- BANNERS -->
     <div class="banners">
-      <div class="banner banner-delivery">
+      <div class="banner banner-delivery" id="deliveryBanner">
         🚚 <strong>Free home delivery</strong> on orders above ₹299
       </div>
       <div class="banner banner-offer">
-        🎉 Up to <strong>16% OFF</strong> on branded medicine · Up to <strong>50% OFF</strong> on generic medicine
+        🎉 Up to <strong>16% OFF</strong> on branded &nbsp;·&nbsp; Up to <strong>50% OFF</strong> on generic
       </div>
     </div>
 
-    <!-- SECTION LABEL -->
-    <h2 class="section-title" id="sectionLabel">⭐ Top Selling Medicines</h2>
+    <!-- HEALTH CONDITIONS -->
+    <div id="conditionsSection">
+      <div class="section-header">
+        <h2>Browse by Health Condition</h2>
+      </div>
+      <div class="conditions-grid">
+        <a class="condition-card" onclick="searchCondition('diabetes')">
+          <span class="cond-icon">🩸</span>
+          <span class="cond-label">Diabetes Care</span>
+        </a>
+        <a class="condition-card" onclick="searchCondition('heart')">
+          <span class="cond-icon">❤️</span>
+          <span class="cond-label">Heart &amp; BP</span>
+        </a>
+        <a class="condition-card" onclick="searchCondition('fever')">
+          <span class="cond-icon">🌡️</span>
+          <span class="cond-label">Fever &amp; Cold</span>
+        </a>
+        <a class="condition-card" onclick="searchCondition('pain')">
+          <span class="cond-icon">💊</span>
+          <span class="cond-label">Pain Relief</span>
+        </a>
+        <a class="condition-card" onclick="searchCondition('stomach')">
+          <span class="cond-icon">🫃</span>
+          <span class="cond-label">Stomach Care</span>
+        </a>
+        <a class="condition-card" onclick="searchCondition('vitamin')">
+          <span class="cond-icon">🌿</span>
+          <span class="cond-label">Vitamins &amp; Nutrition</span>
+        </a>
+        <a class="condition-card" onclick="searchCondition('antibiotic')">
+          <span class="cond-icon">🧬</span>
+          <span class="cond-label">Antibiotics</span>
+        </a>
+        <a class="condition-card" onclick="searchCondition('skin')">
+          <span class="cond-icon">🧴</span>
+          <span class="cond-label">Skin Care</span>
+        </a>
+        <a class="condition-card" onclick="searchCondition('eye')">
+          <span class="cond-icon">👁️</span>
+          <span class="cond-label">Eye Care</span>
+        </a>
+        <a class="condition-card" onclick="searchCondition('thyroid')">
+          <span class="cond-icon">🦋</span>
+          <span class="cond-label">Thyroid</span>
+        </a>
+      </div>
+    </div>
 
-    <!-- PRODUCTS GRID -->
+    <!-- PRODUCTS -->
+    <h2 class="section-label" id="sectionLabel">⭐ Top Selling Medicines</h2>
     <div class="products" id="productsGrid">
       <p class="loading">Loading medicines...</p>
     </div>
 
-  </div><!-- end page-body -->
+  </div><!-- /main-content -->
 
   <!-- STICKY CART BAR -->
   <div class="cart-bar hidden" id="cartBar" onclick="openCart()">
@@ -466,19 +134,53 @@
   <!-- ORDER MODAL -->
   <div class="modal-overlay" id="cartModal">
     <div class="modal">
-      <div class="modal-handle"></div>
       <div id="cartContent"></div>
     </div>
   </div>
 
   <!-- FOOTER -->
   <footer>
-    <strong>Sitaram Medical Store</strong><br>
-    📞 78468 70485 &nbsp;|&nbsp; 88988 70485<br>
-    📍 Old Bus Stand, Opp. of Jio Mart, Digapahandi-761012, Ganjam
+    <div class="footer-inner">
+      <div>
+        <strong>Sitaram Medical Store</strong>
+        <p style="margin-top:6px">Chemist &amp; Druggist</p>
+        <p>📍 Old Bus Stand, Opp. of Jio Mart,<br>Digapahandi-761012, Ganjam, Odisha</p>
+      </div>
+      <div>
+        <strong>Contact Us</strong>
+        <p style="margin-top:6px">📞 <a href="tel:7846870485">78468 70485</a></p>
+        <p>📞 <a href="tel:8898870485">88988 70485</a></p>
+        <p style="margin-top:8px">🕐 Mon–Sat: 8am – 9pm</p>
+        <p>🕐 Sun: 9am – 1pm</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 Sitaram Medical Store. All rights reserved.
+    </div>
   </footer>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="script.js"></script>
+  <script>
+    // Health condition quick search
+    function searchCondition(term) {
+      const input = document.getElementById('searchInput');
+      input.value = term;
+      filterProducts();
+      // Hide conditions section while searching
+      document.getElementById('conditionsSection').style.display = 'none';
+      input.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Show conditions again when search is cleared
+    const origFilterProducts = filterProducts;
+    document.getElementById('searchInput').addEventListener('input', function() {
+      if (!this.value.trim()) {
+        document.getElementById('conditionsSection').style.display = '';
+      } else {
+        document.getElementById('conditionsSection').style.display = 'none';
+      }
+    });
+  </script>
 </body>
 </html>
