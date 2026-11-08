@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sitaram Medical Store — Digapahandi</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="auth.css">
 </head>
 <body>
 
@@ -32,13 +33,11 @@
           placeholder="Search medicines, health products..."
           autocomplete="off"
         >
-        <button onclick="filterProducts()">
-          🔍 Search
-        </button>
+        <button onclick="filterProducts()">🔍 Search</button>
       </div>
 
       <div class="header-actions">
-        <a href="/account.html">
+        <a href="#" id="accountBtn" onclick="openAuthModal(event)">
           <span>👤</span><span>My Account</span>
         </a>
       </div>
@@ -120,7 +119,7 @@
       <p class="loading">Loading medicines...</p>
     </div>
 
-  </div><!-- /main-content -->
+  </div>
 
   <!-- STICKY CART BAR -->
   <div class="cart-bar hidden" id="cartBar" onclick="openCart()">
@@ -136,6 +135,105 @@
     <div class="modal">
       <div id="cartContent"></div>
     </div>
+  </div>
+
+  <!-- OTP AUTH MODAL -->
+  <div class="auth-overlay" id="authOverlay" onclick="if(event.target===this)closeAuthModal()">
+    <div class="auth-modal">
+      <div class="auth-header">
+        <button class="close-btn" onclick="closeAuthModal()">✕</button>
+        <div style="font-size:28px;margin-bottom:8px">💊</div>
+        <h2>Login / Sign Up</h2>
+        <p>Sitaram Medical Store</p>
+      </div>
+      <div class="auth-body">
+        <div id="authError" class="auth-error"></div>
+
+        <!-- STEP 1: Phone -->
+        <div class="auth-step active" id="step-phone">
+          <p style="font-size:14px;color:#4b5563;margin-bottom:16px">Enter your mobile number to receive a one-time password</p>
+          <div class="phone-input-wrap">
+            <span class="phone-prefix">🇮🇳 +91</span>
+            <input type="tel" id="authPhone" placeholder="10-digit mobile number"
+              maxlength="10" inputmode="numeric" pattern="[0-9]*"
+              onkeypress="if(event.key==='Enter')sendOTP()">
+          </div>
+          <button class="auth-btn" id="sendOtpBtn" onclick="sendOTP()">Get OTP →</button>
+          <p class="auth-hint">By continuing, you agree to our Terms of Service</p>
+        </div>
+
+        <!-- STEP 2: OTP -->
+        <div class="auth-step" id="step-otp">
+          <p style="font-size:14px;color:#4b5563;margin-bottom:4px">OTP sent to <strong id="otpPhoneDisplay"></strong></p>
+          <p style="font-size:12px;color:#9ca3af;margin-bottom:18px">Enter the 6-digit code</p>
+          <div class="otp-boxes">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
+            <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
+          </div>
+          <button class="auth-btn" id="verifyOtpBtn" onclick="verifyOTP()">Verify &amp; Login</button>
+          <div class="otp-timer">
+            <span id="resendTimerText"></span>
+            <button id="resendOtpBtn" onclick="resendOTP()" style="display:none">Resend OTP</button>
+          </div>
+          <p class="auth-hint" style="margin-top:8px">
+            <button onclick="showStep('step-phone')">← Change number</button>
+          </p>
+        </div>
+
+        <!-- STEP 3: Name (new users) -->
+        <div class="auth-step" id="step-name">
+          <p style="font-size:14px;color:#4b5563;margin-bottom:16px">Welcome! What should we call you?</p>
+          <input class="name-input" type="text" id="authName" placeholder="Your full name"
+            onkeypress="if(event.key==='Enter')saveName()">
+          <button class="auth-btn" onclick="saveName()">Continue →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE SIDEBAR OVERLAY -->
+  <div class="profile-overlay" id="profileOverlay" onclick="closeProfileSidebar()"></div>
+
+  <!-- PROFILE SIDEBAR -->
+  <div class="profile-sidebar" id="profileSidebar">
+    <div class="profile-sidebar-header">
+      <div>
+        <div class="profile-avatar">👤</div>
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-phone" id="profilePhone">—</div>
+      </div>
+      <button class="close-sidebar" onclick="closeProfileSidebar()">✕</button>
+    </div>
+    <div class="profile-menu">
+      <button class="profile-menu-item" onclick="openOrdersPanel()">
+        <div class="menu-icon">📦</div>
+        <span class="menu-label">My Orders</span>
+        <span class="menu-arrow">›</span>
+      </button>
+      <button class="profile-menu-item" onclick="openAddressPanel()">
+        <div class="menu-icon">📍</div>
+        <span class="menu-label">Address Book</span>
+        <span class="menu-arrow">›</span>
+      </button>
+      <div class="profile-divider"></div>
+      <button class="profile-menu-item logout-item" onclick="logout()">
+        <div class="menu-icon">🚪</div>
+        <span class="menu-label">Logout</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ORDERS / ADDRESS PANEL -->
+  <div class="profile-orders-panel" id="ordersPanel">
+    <div class="panel-header">
+      <button onclick="closeOrdersPanel()">←</button>
+      <span id="ordersPanelTitle">My Orders</span>
+    </div>
+    <div class="panel-body" id="ordersPanelBody"></div>
   </div>
 
   <!-- FOOTER -->
@@ -154,32 +252,22 @@
         <p>🕐 Sun: 9am – 1pm</p>
       </div>
     </div>
-    <div class="footer-bottom">
-      © 2026 Sitaram Medical Store. All rights reserved.
-    </div>
+    <div class="footer-bottom">© 2026 Sitaram Medical Store. All rights reserved.</div>
   </footer>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="script.js"></script>
+  <script src="auth-otp.js"></script>
   <script>
-    // Health condition quick search
     function searchCondition(term) {
       const input = document.getElementById('searchInput');
       input.value = term;
       filterProducts();
-      // Hide conditions section while searching
       document.getElementById('conditionsSection').style.display = 'none';
       input.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
-
-    // Show conditions again when search is cleared
-    const origFilterProducts = filterProducts;
     document.getElementById('searchInput').addEventListener('input', function() {
-      if (!this.value.trim()) {
-        document.getElementById('conditionsSection').style.display = '';
-      } else {
-        document.getElementById('conditionsSection').style.display = 'none';
-      }
+      document.getElementById('conditionsSection').style.display = this.value.trim() ? 'none' : '';
     });
   </script>
 </body>

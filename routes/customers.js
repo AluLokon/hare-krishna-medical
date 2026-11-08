@@ -153,6 +153,20 @@ router.get('/orders', verifyCustomer, async (req, res) => {
   }
 });
 
+// PATCH /api/customers/me/name — update name
+router.patch('/me/name', verifyCustomer, async (req, res) => {
+  const { name } = req.body;
+  if (!name || name.trim().length < 2) {
+    return res.status(400).json({ error: 'Name is too short' });
+  }
+  try {
+    await pool.query('UPDATE customers SET name = $1 WHERE id = $2', [name.trim(), req.customer.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update name' });
+  }
+});
+
 // PATCH /api/customers/address — update saved address
 router.patch('/address', verifyCustomer, async (req, res) => {
   const { address } = req.body;
