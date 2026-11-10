@@ -28,11 +28,13 @@ async function sendOTPEmail(email, otp, name) {
     return { dev: true };
   }
 
+  console.log(`Sending OTP email to ${email} via SMTP user ${smtpUser}`);
+
   const nodemailer = require('nodemailer');
   const transporter = nodemailer.createTransport({
     host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     auth: { user: smtpUser, pass: smtpPass }
   });
 
