@@ -63,7 +63,10 @@ async function sendOTPEmail(email, otp, name) {
       res.on('data', d => data += d);
       res.on('end', () => {
         if (res.statusCode >= 200 && res.statusCode < 300) resolve({ sent: true });
-        else reject(new Error(`Brevo error ${res.statusCode}: ${data}`));
+        else {
+          console.error(`Brevo error ${res.statusCode}:`, data);
+          reject(new Error(`Brevo error ${res.statusCode}: ${data}`));
+        }
       });
     });
     req.on('error', reject);
@@ -209,6 +212,19 @@ router.post('/resend', async (req, res) => {
     res.json(response);
   } catch (err) {
     res.status(500).json({ error: 'Failed to resend OTP.' });
+  }
+});
+
+// GET /api/email-otp/test — debug endpoint (remove after testing)
+router.get('/test', async (req, res) => {
+  const key = process.env.BREVO_API_KEY;
+  const sender = process.env.BREVO_SENDER_EMAIL;
+  if (!key) return res.json({ error: 'BREVO_API_KEY not set' });
+  try {
+    await sendOTPEmail(sender || 'lokonallu444@gmail.com', '123456', 'Test');
+    res.json({ success: true, sender, keyPrefix: key.substring(0, 12) + '...' });
+  } catch (err) {
+    res.json({ error: err.message, sender, keyPrefix: key.substring(0, 12) + '...' });
   }
 });
 
