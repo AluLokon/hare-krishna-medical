@@ -17,23 +17,34 @@ setInterval(() => {
   }
 }, 15 * 60 * 1000);
 
-// Send OTP email via Brevo
+// Send OTP email via Brevo SMTP (nodemailer)
 async function sendOTPEmail(email, otp, name) {
-  const BREVO_KEY = process.env.BREVO_API_KEY;
-  if (!BREVO_KEY) {
+  const smtpUser = process.env.BREVO_SMTP_USER;
+  const smtpPass = process.env.BREVO_SMTP_PASS;
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || 'lokonallu444@gmail.com';
+
+  if (!smtpUser || !smtpPass) {
     console.log(`[DEV] Email OTP for ${email}: ${otp}`);
     return { dev: true };
   }
 
-  const body = JSON.stringify({
-    sender: { name: 'Sitaram Medical Store', email: process.env.BREVO_SENDER_EMAIL || 'lokonallu444@gmail.com' },
-    to: [{ email, name: name || 'Customer' }],
+  const nodemailer = require('nodemailer');
+  const transporter = nodemailer.createTransport({
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false,
+    auth: { user: smtpUser, pass: smtpPass }
+  });
+
+  await transporter.sendMail({
+    from: `"Sitaram Medical Store" <${senderEmail}>`,
+    to: email,
     subject: `${otp} is your Sitaram Medical OTP`,
-    htmlContent: `
+    html: `
       <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#f9f9f9;padding:30px;border-radius:12px">
         <div style="text-align:center;margin-bottom:24px">
           <div style="background:#0f6b3a;display:inline-block;padding:12px 24px;border-radius:8px">
-            <span style="color:white;font-size:20px;font-weight:800">🏥 Sitaram Medical Store</span>
+            <span style="color:white;font-size:20px;font-weight:800">Sitaram Medical Store</span>
           </div>
         </div>
         <h2 style="color:#1a1a2e;text-align:center;margin-bottom:8px">Verify Your Email</h2>
@@ -47,32 +58,7 @@ async function sendOTPEmail(email, otp, name) {
     `
   });
 
-  const https = require('https');
-  return new Promise((resolve, reject) => {
-    const req = https.request({
-      hostname: 'api.brevo.com',
-      path: '/v3/smtp/email',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': BREVO_KEY,
-        'Content-Length': Buffer.byteLength(body)
-      }
-    }, (res) => {
-      let data = '';
-      res.on('data', d => data += d);
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) resolve({ sent: true });
-        else {
-          console.error(`Brevo error ${res.statusCode}:`, data);
-          reject(new Error(`Brevo error ${res.statusCode}: ${data}`));
-        }
-      });
-    });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
+  return { sent: true };
 }
 
 // POST /api/email-otp/send
@@ -217,14 +203,13 @@ router.post('/resend', async (req, res) => {
 
 // GET /api/email-otp/test — debug endpoint (remove after testing)
 router.get('/test', async (req, res) => {
-  const key = process.env.BREVO_API_KEY;
-  const sender = process.env.BREVO_SENDER_EMAIL;
-  if (!key) return res.json({ error: 'BREVO_API_KEY not set' });
+  const sender = process.env.BREVO_SENDER_EMAIL || 'lokonallu444@gmail.com';
+  const smtpUser = process.env.BREVO_SMTP_USER;
   try {
-    await sendOTPEmail(sender || 'lokonallu444@gmail.com', '123456', 'Test');
-    res.json({ success: true, sender, keyPrefix: key.substring(0, 12) + '...' });
+    await sendOTPEmail(sender, '123456', 'Test');
+    res.json({ success: true, sender, smtpUser });
   } catch (err) {
-    res.json({ error: err.message, sender, keyPrefix: key.substring(0, 12) + '...' });
+    res.json({ error: err.message, sender, smtpUser });
   }
 });
 
