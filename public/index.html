@@ -137,35 +137,74 @@
     </div>
   </div>
 
-  <!-- OTP AUTH MODAL -->
+  <!-- AUTH MODAL -->
   <div class="auth-overlay" id="authOverlay" onclick="if(event.target===this)closeAuthModal()">
     <div class="auth-modal">
       <div class="auth-header">
         <button class="close-btn" onclick="closeAuthModal()">✕</button>
         <div style="font-size:28px;margin-bottom:8px">💊</div>
-        <h2>Login / Sign Up</h2>
+        <h2 id="authModalTitle">Welcome Back</h2>
         <p>Sitaram Medical Store</p>
       </div>
       <div class="auth-body">
         <div id="authError" class="auth-error"></div>
 
-        <!-- STEP 1: Phone -->
-        <div class="auth-step active" id="step-phone">
-          <p style="font-size:14px;color:#4b5563;margin-bottom:16px">Enter your mobile number to receive a one-time password</p>
-          <div class="phone-input-wrap">
-            <span class="phone-prefix">🇮🇳 +91</span>
-            <input type="tel" id="authPhone" placeholder="10-digit mobile number"
-              maxlength="10" inputmode="numeric" pattern="[0-9]*"
-              onkeypress="if(event.key==='Enter')sendOTP()">
+        <!-- STEP: Login -->
+        <div class="auth-step active" id="step-login">
+          <div class="auth-field">
+            <label>Email Address</label>
+            <input type="email" id="loginEmail" placeholder="Your Email Address"
+              onkeypress="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
           </div>
-          <button class="auth-btn" id="sendOtpBtn" onclick="sendOTP()">Get OTP →</button>
-          <p class="auth-hint">By continuing, you agree to our Terms of Service</p>
+          <div class="auth-field">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="Enter your password"
+              onkeypress="if(event.key==='Enter')login()">
+          </div>
+          <button class="auth-btn" id="loginBtn" onclick="login()">Login</button>
+          <p class="auth-hint">New here? <button onclick="switchToSignup()">Create Account</button></p>
         </div>
 
-        <!-- STEP 2: OTP -->
+        <!-- STEP: Signup -->
+        <div class="auth-step" id="step-signup">
+          <div class="auth-fields-row">
+            <div class="auth-field">
+              <label>First Name</label>
+              <input type="text" id="signupName" placeholder="Your Full Name">
+            </div>
+          </div>
+          <div class="auth-field">
+            <label>Email Address</label>
+            <input type="email" id="signupEmail" placeholder="Your Email Address">
+          </div>
+          <div class="auth-field">
+            <label>Phone Number</label>
+            <div class="phone-input-wrap">
+              <span class="phone-prefix">+91</span>
+              <input type="tel" id="signupPhone" placeholder="10-digit mobile number"
+                maxlength="10" inputmode="numeric">
+            </div>
+          </div>
+          <div class="auth-field">
+            <label>Password</label>
+            <input type="password" id="signupPassword" placeholder="Create a strong password">
+          </div>
+          <div class="auth-field">
+            <label>Confirm Password</label>
+            <input type="password" id="signupConfirm" placeholder="Re-enter your password"
+              onkeypress="if(event.key==='Enter')sendSignupOTP()">
+          </div>
+          <button class="auth-btn" id="signupBtn" onclick="sendSignupOTP()">Create Account</button>
+          <p class="auth-hint">Already have an account? <button onclick="switchToLogin()">Login</button></p>
+        </div>
+
+        <!-- STEP: OTP Verify -->
         <div class="auth-step" id="step-otp">
-          <p style="font-size:14px;color:#4b5563;margin-bottom:4px">OTP sent to <strong id="otpPhoneDisplay"></strong></p>
-          <p style="font-size:12px;color:#9ca3af;margin-bottom:18px">Enter the 6-digit code</p>
+          <div style="text-align:center;margin-bottom:20px">
+            <div style="font-size:40px;margin-bottom:8px">✉️</div>
+            <h3 style="color:#1a1a2e;margin-bottom:6px">Verify your email</h3>
+            <p style="font-size:13px;color:#6b7280">We sent a 6-digit OTP to<br><strong id="otpEmailDisplay" style="color:#0f6b3a"></strong></p>
+          </div>
           <div class="otp-boxes">
             <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
             <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
@@ -174,23 +213,17 @@
             <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
             <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
           </div>
-          <button class="auth-btn" id="verifyOtpBtn" onclick="verifyOTP()">Verify &amp; Login</button>
+          <button class="auth-btn" id="verifyOtpBtn" onclick="verifySignupOTP()">Verify OTP</button>
           <div class="otp-timer">
             <span id="resendTimerText"></span>
             <button id="resendOtpBtn" onclick="resendOTP()" style="display:none">Resend OTP</button>
           </div>
           <p class="auth-hint" style="margin-top:8px">
-            <button onclick="showStep('step-phone')">← Change number</button>
+            <button onclick="switchToSignup()">← Back to registration</button>
           </p>
+          <p class="auth-hint"><button onclick="switchToLogin()">Already have an account? Login</button></p>
         </div>
 
-        <!-- STEP 3: Name (new users) -->
-        <div class="auth-step" id="step-name">
-          <p style="font-size:14px;color:#4b5563;margin-bottom:16px">Welcome! What should we call you?</p>
-          <input class="name-input" type="text" id="authName" placeholder="Your full name"
-            onkeypress="if(event.key==='Enter')saveName()">
-          <button class="auth-btn" onclick="saveName()">Continue →</button>
-        </div>
       </div>
     </div>
   </div>
