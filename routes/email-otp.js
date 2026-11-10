@@ -32,9 +32,7 @@ async function sendOTPEmail(email, otp, name) {
 
   const nodemailer = require('nodemailer');
   const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 465,
-    secure: true,
+    service: 'gmail',
     auth: { user: smtpUser, pass: smtpPass }
   });
 
