@@ -226,11 +226,20 @@ function renderProducts(medicines) {
     return;
   }
 
-  grid.innerHTML = medicines.map(p => `
+  grid.innerHTML = medicines.map(p => {
+    // Format uses: take first 2 conditions only
+    let usesHtml = '';
+    if (p.uses) {
+      const usesList = p.uses.replace(/Treatment of /gi, '').split(/\n|,/).map(u => u.trim()).filter(Boolean);
+      const topUses = usesList.slice(0, 2).join(' · ');
+      if (topUses) usesHtml = `<div class="product-uses">For: ${topUses}</div>`;
+    }
+    return `
     <div class="product-card ${p.stock === 0 ? 'no-stock' : ''}">
       <div class="product-icon">${p.icon}</div>
       <div class="product-name">${p.name}</div>
       <div class="product-brand">${p.brand}</div>
+      ${usesHtml}
       <div class="product-price">₹${p.price}</div>
       <div class="product-footer">
         ${p.requires_rx ? '<span class="rx-badge">Rx</span>' : '<span></span>'}
@@ -245,8 +254,8 @@ function renderProducts(medicines) {
             : `<button class="add-btn" onclick="addToCart(${p.id})">+ Add</button>`
         }
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function addToCart(id) {

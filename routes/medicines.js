@@ -69,7 +69,7 @@ router.get('/search', async (req, res) => {
 
     if (q) {
       params.push(`%${q}%`);
-      query += ` AND (name ILIKE $${params.length} OR brand ILIKE $${params.length})`;
+      query += ` AND (name ILIKE $${params.length} OR brand ILIKE $${params.length} OR uses ILIKE $${params.length} OR composition ILIKE $${params.length})`;
     }
     if (category && category !== 'all') {
       params.push(category);
