@@ -26,7 +26,7 @@ async function sendOTPEmail(email, otp, name) {
   }
 
   const body = JSON.stringify({
-    sender: { name: 'Sitaram Medical Store', email: 'noreply@sitarammedical.in' },
+    sender: { name: 'Sitaram Medical Store', email: process.env.BREVO_SENDER_EMAIL || 'lokonallu444@gmail.com' },
     to: [{ email, name: name || 'Customer' }],
     subject: `${otp} is your Sitaram Medical OTP`,
     htmlContent: `
