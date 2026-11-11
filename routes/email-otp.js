@@ -1,4 +1,4 @@
-// email-otp.js — Email OTP via Brevo for customer signup verification
+// email-otp.js — Email OTP via Google Apps Script (free, sends to any email)
 
 const express = require('express');
 const router = express.Router();
@@ -17,57 +17,77 @@ setInterval(() => {
   }
 }, 15 * 60 * 1000);
 
-// Send OTP email via Resend HTTP API
+// Send OTP email via Google Apps Script
 async function sendOTPEmail(email, otp, name) {
-  const RESEND_KEY = process.env.RESEND_API_KEY;
+  const SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL;
+  const SECRET = process.env.GOOGLE_SCRIPT_SECRET || 'sitaram2024secret';
 
-  if (!RESEND_KEY) {
+  if (!SCRIPT_URL) {
     console.log(`[DEV] Email OTP for ${email}: ${otp}`);
     return { dev: true };
   }
 
-  console.log(`Sending OTP email to ${email} via Resend`);
+  console.log(`Sending OTP email to ${email} via Google Apps Script`);
 
   const https = require('https');
-  const body = JSON.stringify({
-    from: 'Sitaram Medical Store <onboarding@resend.dev>',
-    to: [email],
-    subject: `${otp} is your Sitaram Medical OTP`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#f9f9f9;padding:30px;border-radius:12px">
-        <div style="text-align:center;margin-bottom:24px">
-          <div style="background:#0f6b3a;display:inline-block;padding:12px 24px;border-radius:8px">
-            <span style="color:white;font-size:20px;font-weight:800">Sitaram Medical Store</span>
-          </div>
-        </div>
-        <h2 style="color:#1a1a2e;text-align:center;margin-bottom:8px">Verify Your Email</h2>
-        <p style="color:#555;text-align:center;margin-bottom:28px">Use the OTP below to complete your registration</p>
-        <div style="background:white;border:2px solid #e5e7eb;border-radius:12px;padding:24px;text-align:center">
-          <div style="letter-spacing:12px;font-size:36px;font-weight:800;color:#0f6b3a;font-family:monospace">${otp}</div>
-        </div>
-        <p style="color:#888;text-align:center;font-size:13px;margin-top:16px">This OTP expires in <strong>10 minutes</strong>.</p>
-        <p style="color:#aaa;text-align:center;font-size:12px;margin-top:24px">If you didn't request this, please ignore this email.</p>
-      </div>
-    `
-  });
+  const url = new URL(SCRIPT_URL);
+  const body = JSON.stringify({ to: email, otp, name, secret: SECRET });
 
   return new Promise((resolve, reject) => {
     const req = https.request({
-      hostname: 'api.resend.com',
-      path: '/emails',
+      hostname: url.hostname,
+      path: url.pathname + url.search,
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${RESEND_KEY}`,
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(body)
       }
     }, (res) => {
+      // Google Apps Script redirects POST to GET — follow redirect manually
+      if (res.statusCode === 302 || res.statusCode === 301) {
+        const redirectUrl = new URL(res.headers.location);
+        // Re-POST to redirect location
+        const req2 = https.request({
+          hostname: redirectUrl.hostname,
+          path: redirectUrl.pathname + redirectUrl.search,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body)
+          }
+        }, (res2) => {
+          let data = '';
+          res2.on('data', d => data += d);
+          res2.on('end', () => {
+            console.log(`Apps Script response ${res2.statusCode}:`, data);
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.success) resolve({ sent: true });
+              else reject(new Error(parsed.error || 'Script error'));
+            } catch {
+              if (res2.statusCode >= 200 && res2.statusCode < 300) resolve({ sent: true });
+              else reject(new Error(`Script error ${res2.statusCode}`));
+            }
+          });
+        });
+        req2.on('error', reject);
+        req2.write(body);
+        req2.end();
+        return;
+      }
+
       let data = '';
       res.on('data', d => data += d);
       res.on('end', () => {
-        console.log(`Resend response ${res.statusCode}:`, data);
-        if (res.statusCode >= 200 && res.statusCode < 300) resolve({ sent: true });
-        else reject(new Error(`Resend error ${res.statusCode}: ${data}`));
+        console.log(`Apps Script response ${res.statusCode}:`, data);
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.success) resolve({ sent: true });
+          else reject(new Error(parsed.error || 'Script error'));
+        } catch {
+          if (res.statusCode >= 200 && res.statusCode < 300) resolve({ sent: true });
+          else reject(new Error(`Script error ${res.statusCode}`));
+        }
       });
     });
     req.on('error', reject);
@@ -77,8 +97,6 @@ async function sendOTPEmail(email, otp, name) {
 }
 
 // POST /api/email-otp/send
-// Body: { email, name, phone, password }
-// Saves user data, sends OTP, waits for verify before inserting to DB
 router.post('/send', async (req, res) => {
   const { email, name, phone, password } = req.body;
 
@@ -95,7 +113,6 @@ router.post('/send', async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
 
-  // Check email already registered
   try {
     const existing = await pool.query('SELECT id FROM customers WHERE email = $1', [email.toLowerCase()]);
     if (existing.rows.length > 0) {
@@ -106,9 +123,8 @@ router.post('/send', async (req, res) => {
     return res.status(500).json({ error: 'Server error. Please try again.' });
   }
 
-  // Rate limit: max 3 OTPs per email per 10 min
-  const existing = otpStore[email];
-  if (existing && existing.expires > Date.now() && (existing.sendCount || 0) >= 3) {
+  const existingOtp = otpStore[email];
+  if (existingOtp && existingOtp.expires > Date.now() && (existingOtp.sendCount || 0) >= 3) {
     return res.status(429).json({ error: 'Too many attempts. Please try again in 10 minutes.' });
   }
 
@@ -119,14 +135,13 @@ router.post('/send', async (req, res) => {
     otp,
     expires: Date.now() + 10 * 60 * 1000,
     attempts: 0,
-    sendCount: (existing?.sendCount || 0) + 1,
+    sendCount: (existingOtp?.sendCount || 0) + 1,
     userData: { name: name.trim(), phone: phone.replace(/\D/g, ''), email: email.toLowerCase(), password: hashedPassword }
   };
 
   try {
     const result = await sendOTPEmail(email, otp, name);
     const response = { success: true, message: `OTP sent to ${email}` };
-    // Dev mode: return OTP in response
     if (result.dev) response.dev_otp = otp;
     res.json(response);
   } catch (err) {
@@ -136,7 +151,6 @@ router.post('/send', async (req, res) => {
 });
 
 // POST /api/email-otp/verify
-// Body: { email, otp }
 router.post('/verify', async (req, res) => {
   const { email, otp } = req.body;
 
@@ -159,7 +173,6 @@ router.post('/verify', async (req, res) => {
     return res.status(400).json({ error: `Incorrect OTP. ${5 - record.attempts} attempts remaining.` });
   }
 
-  // OTP correct — create customer account
   const { name, phone, password, email: userEmail } = record.userData;
   delete otpStore[email];
 
@@ -216,16 +229,13 @@ router.post('/resend', async (req, res) => {
   }
 });
 
-// GET /api/email-otp/test — debug endpoint (remove after testing)
+// GET /api/email-otp/test
 router.get('/test', async (req, res) => {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return res.json({ error: 'RESEND_API_KEY not set' });
   try {
     await sendOTPEmail('lokonallu444@gmail.com', '123456', 'Test');
-    res.json({ success: true, keyPrefix: key.substring(0, 10) + '...' });
+    res.json({ success: true, provider: 'Google Apps Script' });
   } catch (err) {
-    res.json({ error: err.message, keyPrefix: key.substring(0, 10) + '...' });
+    res.json({ error: err.message });
   }
 });
-
 module.exports = router;
