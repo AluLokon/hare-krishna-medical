@@ -17,7 +17,7 @@ setInterval(() => {
   }
 }, 15 * 60 * 1000);
 
-// Send OTP email via Google Apps Script
+// Send OTP email via Google Apps Script (GET request)
 async function sendOTPEmail(email, otp, name) {
   const SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL;
   const SECRET = process.env.GOOGLE_SCRIPT_SECRET || 'sitaram2024secret';
@@ -30,70 +30,39 @@ async function sendOTPEmail(email, otp, name) {
   console.log(`Sending OTP email to ${email} via Google Apps Script`);
 
   const https = require('https');
+  const params = new URLSearchParams({ to: email, otp, name, secret: SECRET });
   const url = new URL(SCRIPT_URL);
-  const body = JSON.stringify({ to: email, otp, name, secret: SECRET });
+  const path = url.pathname + '?' + params.toString();
 
-  return new Promise((resolve, reject) => {
-    const req = https.request({
-      hostname: url.hostname,
-      path: url.pathname + url.search,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    }, (res) => {
-      // Google Apps Script redirects POST to GET — follow redirect manually
-      if (res.statusCode === 302 || res.statusCode === 301) {
-        const redirectUrl = new URL(res.headers.location);
-        // Re-POST to redirect location
-        const req2 = https.request({
-          hostname: redirectUrl.hostname,
-          path: redirectUrl.pathname + redirectUrl.search,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(body)
-          }
-        }, (res2) => {
-          let data = '';
-          res2.on('data', d => data += d);
-          res2.on('end', () => {
-            console.log(`Apps Script response ${res2.statusCode}:`, data);
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.success) resolve({ sent: true });
-              else reject(new Error(parsed.error || 'Script error'));
-            } catch {
-              if (res2.statusCode >= 200 && res2.statusCode < 300) resolve({ sent: true });
-              else reject(new Error(`Script error ${res2.statusCode}`));
-            }
-          });
-        });
-        req2.on('error', reject);
-        req2.write(body);
-        req2.end();
-        return;
-      }
-
-      let data = '';
-      res.on('data', d => data += d);
-      res.on('end', () => {
-        console.log(`Apps Script response ${res.statusCode}:`, data);
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.success) resolve({ sent: true });
-          else reject(new Error(parsed.error || 'Script error'));
-        } catch {
-          if (res.statusCode >= 200 && res.statusCode < 300) resolve({ sent: true });
-          else reject(new Error(`Script error ${res.statusCode}`));
+  function makeRequest(hostname, path, redirectCount) {
+    return new Promise((resolve, reject) => {
+      if (redirectCount > 5) return reject(new Error('Too many redirects'));
+      const req = https.request({ hostname, path, method: 'GET' }, (res) => {
+        if (res.statusCode === 301 || res.statusCode === 302) {
+          const loc = new URL(res.headers.location);
+          return makeRequest(loc.hostname, loc.pathname + loc.search, redirectCount + 1)
+            .then(resolve).catch(reject);
         }
+        let data = '';
+        res.on('data', d => data += d);
+        res.on('end', () => {
+          console.log(`Apps Script response ${res.statusCode}:`, data);
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.success) resolve({ sent: true });
+            else reject(new Error(parsed.error || 'Script error'));
+          } catch {
+            if (res.statusCode >= 200 && res.statusCode < 300) resolve({ sent: true });
+            else reject(new Error(`Script error ${res.statusCode}`));
+          }
+        });
       });
+      req.on('error', reject);
+      req.end();
     });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
+  }
+
+  return makeRequest(url.hostname, path, 0);
 }
 
 // POST /api/email-otp/send
@@ -238,4 +207,5 @@ router.get('/test', async (req, res) => {
     res.json({ error: err.message });
   }
 });
+
 module.exports = router;
