@@ -17,28 +17,21 @@ setInterval(() => {
   }
 }, 15 * 60 * 1000);
 
-// Send OTP email via Brevo SMTP (nodemailer)
+// Send OTP email via Resend HTTP API
 async function sendOTPEmail(email, otp, name) {
-  const smtpUser = process.env.BREVO_SMTP_USER;
-  const smtpPass = process.env.BREVO_SMTP_PASS;
-  const senderEmail = process.env.BREVO_SENDER_EMAIL || 'lokonallu444@gmail.com';
+  const RESEND_KEY = process.env.RESEND_API_KEY;
 
-  if (!smtpUser || !smtpPass) {
+  if (!RESEND_KEY) {
     console.log(`[DEV] Email OTP for ${email}: ${otp}`);
     return { dev: true };
   }
 
-  console.log(`Sending OTP email to ${email} via SMTP user ${smtpUser}`);
+  console.log(`Sending OTP email to ${email} via Resend`);
 
-  const nodemailer = require('nodemailer');
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: smtpUser, pass: smtpPass }
-  });
-
-  await transporter.sendMail({
-    from: `"Sitaram Medical Store" <${senderEmail}>`,
-    to: email,
+  const https = require('https');
+  const body = JSON.stringify({
+    from: 'Sitaram Medical Store <onboarding@resend.dev>',
+    to: [email],
     subject: `${otp} is your Sitaram Medical OTP`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#f9f9f9;padding:30px;border-radius:12px">
@@ -58,7 +51,29 @@ async function sendOTPEmail(email, otp, name) {
     `
   });
 
-  return { sent: true };
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: 'api.resend.com',
+      path: '/emails',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_KEY}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body)
+      }
+    }, (res) => {
+      let data = '';
+      res.on('data', d => data += d);
+      res.on('end', () => {
+        console.log(`Resend response ${res.statusCode}:`, data);
+        if (res.statusCode >= 200 && res.statusCode < 300) resolve({ sent: true });
+        else reject(new Error(`Resend error ${res.statusCode}: ${data}`));
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
 }
 
 // POST /api/email-otp/send
@@ -203,13 +218,13 @@ router.post('/resend', async (req, res) => {
 
 // GET /api/email-otp/test — debug endpoint (remove after testing)
 router.get('/test', async (req, res) => {
-  const sender = process.env.BREVO_SENDER_EMAIL || 'lokonallu444@gmail.com';
-  const smtpUser = process.env.BREVO_SMTP_USER;
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return res.json({ error: 'RESEND_API_KEY not set' });
   try {
-    await sendOTPEmail(sender, '123456', 'Test');
-    res.json({ success: true, sender, smtpUser });
+    await sendOTPEmail('lokonallu444@gmail.com', '123456', 'Test');
+    res.json({ success: true, keyPrefix: key.substring(0, 10) + '...' });
   } catch (err) {
-    res.json({ error: err.message, sender, smtpUser });
+    res.json({ error: err.message, keyPrefix: key.substring(0, 10) + '...' });
   }
 });
 
