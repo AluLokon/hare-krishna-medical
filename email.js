@@ -1,7 +1,52 @@
-const { BrevoClient } = require('@getbrevo/brevo');
 require('dotenv').config();
 
-const client = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
+const SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL;
+const SECRET = process.env.GOOGLE_SCRIPT_SECRET || 'sitaram2024secret';
+
+const https = require('https');
+
+function makeGetRequest(url) {
+  return new Promise((resolve, reject) => {
+    function follow(hostname, path, hops) {
+      if (hops > 5) return reject(new Error('Too many redirects'));
+      const req = https.request({ hostname, path, method: 'GET' }, (res) => {
+        if (res.statusCode === 301 || res.statusCode === 302) {
+          const loc = new URL(res.headers.location);
+          return follow(loc.hostname, loc.pathname + loc.search, hops + 1);
+        }
+        let data = '';
+        res.on('data', d => data += d);
+        res.on('end', () => resolve({ status: res.statusCode, data }));
+      });
+      req.on('error', reject);
+      req.end();
+    }
+    const u = new URL(url);
+    follow(u.hostname, u.pathname + u.search, 0);
+  });
+}
+
+async function sendViaScript(to, subject, htmlBody, toName) {
+  if (!SCRIPT_URL) {
+    console.log(`[DEV] Email to ${to}: ${subject}`);
+    return;
+  }
+  const params = new URLSearchParams({
+    to,
+    toName: toName || '',
+    subject,
+    html: htmlBody,
+    secret: SECRET,
+    mode: 'custom'
+  });
+  const url = SCRIPT_URL + '?' + params.toString();
+  try {
+    const result = await makeGetRequest(url);
+    console.log(`Email sent to ${to}:`, result.data);
+  } catch (err) {
+    console.error(`Email failed to ${to}:`, err.message);
+  }
+}
 
 async function sendOrderConfirmation(customerEmail, customerName, orderId, items, total) {
   const itemsHtml = items.map(i => `
@@ -16,15 +61,12 @@ async function sendOrderConfirmation(customerEmail, customerName, orderId, items
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
       <div style="background:linear-gradient(135deg,#085041,#1D9E75);padding:24px;border-radius:12px 12px 0 0;text-align:center">
         <h1 style="color:white;margin:0;font-size:22px">🏥 Sitaram Medical Store</h1>
-        <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Chemist and Druggiest - Digapahandi, Ganjam</p>
+        <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Chemist and Druggist - Digapahandi, Ganjam</p>
       </div>
       <div style="background:#f9f9f7;padding:24px">
         <div style="background:white;border-radius:10px;padding:20px;margin-bottom:16px">
           <h2 style="color:#1a1a1a;margin:0 0 8px;font-size:18px">Order Confirmed!</h2>
-          <p style="color:#555;margin:0;font-size:14px">
-            Hi <strong>${customerName}</strong>, your order has been received.
-            We will call you shortly to confirm delivery.
-          </p>
+          <p style="color:#555;margin:0;font-size:14px">Hi <strong>${customerName}</strong>, your order has been received. We will call you shortly to confirm delivery.</p>
         </div>
         <div style="background:#EAF3DE;border:1px solid #C0DD97;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center">
           <p style="color:#555;margin:0 0 4px;font-size:12px">Your Order ID</p>
@@ -34,20 +76,16 @@ async function sendOrderConfirmation(customerEmail, customerName, orderId, items
         <div style="background:white;border-radius:10px;padding:20px;margin-bottom:16px">
           <h3 style="color:#1a1a1a;margin:0 0 12px;font-size:15px">Order Items</h3>
           <table style="width:100%;border-collapse:collapse">
-            <thead>
-              <tr style="background:#f5f5f0">
-                <th style="padding:8px 12px;text-align:left;font-size:12px;color:#777">Medicine</th>
-                <th style="padding:8px 12px;text-align:center;font-size:12px;color:#777">Qty</th>
-                <th style="padding:8px 12px;text-align:right;font-size:12px;color:#777">Amount</th>
-              </tr>
-            </thead>
+            <thead><tr style="background:#f5f5f0">
+              <th style="padding:8px 12px;text-align:left;font-size:12px;color:#777">Medicine</th>
+              <th style="padding:8px 12px;text-align:center;font-size:12px;color:#777">Qty</th>
+              <th style="padding:8px 12px;text-align:right;font-size:12px;color:#777">Amount</th>
+            </tr></thead>
             <tbody>${itemsHtml}</tbody>
-            <tfoot>
-              <tr>
-                <td colspan="2" style="padding:12px;font-weight:700;font-size:15px">Total</td>
-                <td style="padding:12px;font-weight:700;font-size:15px;text-align:right;color:#3B6D11">Rs ${parseFloat(total).toFixed(2)}</td>
-              </tr>
-            </tfoot>
+            <tfoot><tr>
+              <td colspan="2" style="padding:12px;font-weight:700;font-size:15px">Total</td>
+              <td style="padding:12px;font-weight:700;font-size:15px;text-align:right;color:#3B6D11">₹${parseFloat(total).toFixed(2)}</td>
+            </tr></tfoot>
           </table>
         </div>
         <div style="background:white;border-radius:10px;padding:16px;text-align:center">
@@ -62,22 +100,15 @@ async function sendOrderConfirmation(customerEmail, customerName, orderId, items
     </div>
   `;
 
-  try {
-    await client.transactionalEmails.sendTransacEmail({
-      sender: { name: 'Sitaram Medical Store', email: process.env.BREVO_SENDER_EMAIL },
-      to: [{ email: customerEmail, name: customerName }],
-      subject: 'Order #' + orderId + ' Confirmed - Sitaram Medical Store',
-      htmlContent: html
-    });
-    console.log('Order confirmation email sent to ' + customerEmail);
-  } catch (err) {
-    console.error('Email send failed:', err.message || JSON.stringify(err));
-  }
+  await sendViaScript(customerEmail, `Order #${orderId} Confirmed - Sitaram Medical Store`, html, customerName);
 }
 
 async function sendAdminNotification(orderId, customerName, phone, items, total) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) return;
+
   const itemsHtml = items.map(i =>
-    '<p style="margin:4px 0">- ' + i.name + ' x' + i.qty + ' = Rs ' + (i.qty * i.price).toFixed(2) + '</p>'
+    `<p style="margin:4px 0">- ${i.name} x${i.qty} = ₹${(i.qty * i.price).toFixed(2)}</p>`
   ).join('');
 
   const html = `
@@ -89,10 +120,8 @@ async function sendAdminNotification(orderId, customerName, phone, items, total)
         <p style="margin:0 0 8px"><strong>Order ID:</strong> #${orderId}</p>
         <p style="margin:0 0 8px"><strong>Customer:</strong> ${customerName}</p>
         <p style="margin:0 0 16px"><strong>Phone:</strong> ${phone}</p>
-        <div style="background:white;padding:12px;border-radius:8px;margin-bottom:12px">
-          ${itemsHtml}
-        </div>
-        <p style="font-size:18px;font-weight:700;color:#3B6D11;margin:0">Total: Rs ${parseFloat(total).toFixed(2)}</p>
+        <div style="background:white;padding:12px;border-radius:8px;margin-bottom:12px">${itemsHtml}</div>
+        <p style="font-size:18px;font-weight:700;color:#3B6D11;margin:0">Total: ₹${parseFloat(total).toFixed(2)}</p>
         <a href="https://hare-krishna-medical-sshf.onrender.com/admin.html"
           style="display:block;margin-top:16px;background:#3B6D11;color:white;padding:10px;border-radius:8px;text-align:center;text-decoration:none;font-size:14px">
           View in Admin Dashboard
@@ -101,17 +130,7 @@ async function sendAdminNotification(orderId, customerName, phone, items, total)
     </div>
   `;
 
-  try {
-    await client.transactionalEmails.sendTransacEmail({
-      sender: { name: 'Sitaram Medical Store', email: process.env.BREVO_SENDER_EMAIL },
-      to: [{ email: process.env.ADMIN_EMAIL }],
-      subject: 'New Order #' + orderId + ' from ' + customerName,
-      htmlContent: html
-    });
-    console.log('Admin notification sent for order #' + orderId);
-  } catch (err) {
-    console.error('Admin notification email failed:', err.message || JSON.stringify(err));
-  }
+  await sendViaScript(adminEmail, `New Order #${orderId} from ${customerName}`, html, 'Admin');
 }
 
 module.exports = { sendOrderConfirmation, sendAdminNotification };
