@@ -117,6 +117,7 @@ async function placeOrderOnline(hasRx) {
             <p>Thank you ${name}!<br>
             Payment received. Sitaram Medical Store will deliver your order soon.</p>
             <p style="font-size:12px;color:#2563EB;margin-top:8px">💳 Paid Online</p>
+            <a href="/track.html?id=${orderId}" style="display:inline-block;margin-top:10px;padding:8px 20px;background:#e8f5ee;color:#0f6b3a;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">📦 Track My Order</a>
             <button class="continue-btn" onclick="closeCart()">Continue Shopping</button>
           </div>`;
       },
@@ -388,7 +389,7 @@ const hasRx = ids.some(k => {
       <input type="tel" id="custPhone" placeholder="WhatsApp number">
       <label>Email (optional — for order confirmation)</label>
       <input type="email" id="custEmail" placeholder="yourname@gmail.com">
-      <label>Delivery address</label>
+      <label>Delivery address <button type="button" onclick="useMyLocation()" id="locationBtn" style="margin-left:8px;background:#e8f5ee;color:#0f6b3a;border:1px solid #0f6b3a;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">📍 Use My Location</button></label>
       <textarea id="custAddress" placeholder="House no., street, landmark...">${getCustomerAddress()}</textarea>
       <label>Extra notes</label>
       <textarea id="custNotes" placeholder="Any other instructions?" rows="2"></textarea>
@@ -499,7 +500,8 @@ try {
         <p>Thank you ${name}!<br>
         Sitaram Medical Store will call you on <strong>${phone}</strong> to confirm.</p>
         <p style="font-size:12px;color:#888;margin-top:8px">Save your Order ID to track your order status.</p>
-<p style="font-size:12px;color:#e07b00;margin-top:6px">📧 Check your spam/junk folder if you don't see the confirmation email.</p>
+        <p style="font-size:12px;color:#e07b00;margin-top:6px">📧 Check your spam/junk folder if you don't see the confirmation email.</p>
+        <a href="/track.html?id=${orderId}" style="display:inline-block;margin-top:10px;padding:8px 20px;background:#e8f5ee;color:#0f6b3a;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">📦 Track My Order</a>
         <button class="continue-btn" onclick="closeCart()">Continue Shopping</button>
       </div>`;
 
@@ -578,4 +580,49 @@ function getCustomerAddress() {
     return customer.address || '';
   }
   return '';
+}
+
+async function useMyLocation() {
+  const btn = document.getElementById('locationBtn');
+  const addrField = document.getElementById('custAddress');
+  if (!btn || !addrField) return;
+
+  if (!navigator.geolocation) {
+    alert('Location not supported by your browser.');
+    return;
+  }
+
+  btn.textContent = '⏳ Detecting...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude, longitude } = pos.coords;
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const data = await res.json();
+      const addr = data.address;
+      const parts = [
+        addr.road || addr.pedestrian || addr.footway,
+        addr.suburb || addr.neighbourhood || addr.village,
+        addr.city || addr.town || addr.county,
+        addr.state_district,
+        addr.state,
+        addr.postcode
+      ].filter(Boolean);
+      addrField.value = parts.join(', ');
+    } catch (err) {
+      addrField.value = `Lat: ${latitude.toFixed(5)}, Lon: ${longitude.toFixed(5)}`;
+    }
+    btn.textContent = '✅ Location Set';
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = '📍 Use My Location'; }, 3000);
+  }, (err) => {
+    btn.textContent = '📍 Use My Location';
+    btn.disabled = false;
+    if (err.code === 1) alert('Location access denied. Please allow location in your browser settings.');
+    else alert('Could not get your location. Please enter manually.');
+  }, { timeout: 10000 });
 }
