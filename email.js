@@ -133,4 +133,56 @@ async function sendAdminNotification(orderId, customerName, phone, items, total)
   await sendViaScript(adminEmail, `New Order #${orderId} from ${customerName}`, html, 'Admin');
 }
 
-module.exports = { sendOrderConfirmation, sendAdminNotification };
+async function sendLowStockAlert(lowStockItems) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail || !lowStockItems.length) return;
+
+  const rows = lowStockItems.map(m => `
+    <tr>
+      <td style="padding:10px 12px;border-bottom:1px solid #eee">${m.icon || '💊'} ${m.name}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #eee;color:#6b7280">${m.brand || '—'}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:center">
+        <span style="background:${m.stock === 0 ? '#fee2e2' : '#fef3c7'};color:${m.stock === 0 ? '#991b1b' : '#92400e'};padding:3px 10px;border-radius:20px;font-weight:700;font-size:13px">
+          ${m.stock === 0 ? '❌ Out of Stock' : `⚠️ ${m.stock} left`}
+        </span>
+      </td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+      <div style="background:linear-gradient(135deg,#b45309,#d97706);padding:24px;border-radius:12px 12px 0 0;text-align:center">
+        <h1 style="color:white;margin:0;font-size:20px">⚠️ Low Stock Alert</h1>
+        <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Sitaram Medical Store — Action Required</p>
+      </div>
+      <div style="background:#fffbeb;padding:24px">
+        <p style="color:#92400e;font-size:14px;margin:0 0 16px">The following medicines are running low and need to be restocked:</p>
+        <div style="background:white;border-radius:10px;overflow:hidden;border:1px solid #fde68a">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:#fef3c7">
+                <th style="padding:10px 12px;text-align:left;font-size:12px;color:#92400e">Medicine</th>
+                <th style="padding:10px 12px;text-align:left;font-size:12px;color:#92400e">Brand</th>
+                <th style="padding:10px 12px;text-align:center;font-size:12px;color:#92400e">Stock</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div style="margin-top:16px;text-align:center">
+          <a href="https://hare-krishna-medical-sshf.onrender.com/admin.html"
+            style="display:inline-block;background:#d97706;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:700">
+            📦 Update Stock in Admin
+          </a>
+        </div>
+      </div>
+      <div style="background:#92400e;padding:14px;border-radius:0 0 12px 12px;text-align:center">
+        <p style="color:rgba(255,255,255,0.8);margin:0;font-size:12px">Sitaram Medical Store · Digapahandi, Ganjam</p>
+      </div>
+    </div>
+  `;
+
+  await sendViaScript(adminEmail, `⚠️ Low Stock Alert — ${lowStockItems.length} medicine(s) need restocking`, html, 'Admin');
+}
+
+module.exports = { sendOrderConfirmation, sendAdminNotification, sendLowStockAlert };

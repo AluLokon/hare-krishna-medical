@@ -4,7 +4,8 @@ const pool = require('../db');
 
 const verifyToken = require('../middleware');
 const { body, validationResult } = require('express-validator');
-const { sendOrderConfirmation, sendAdminNotification } = require('../email');
+const { sendOrderConfirmation, sendAdminNotification, sendLowStockAlert } = require('../email');
+const { sendNewOrderWhatsApp } = require('../whatsapp');
 
 const orderValidation = [
   body('customer_name').trim().notEmpty().withMessage('Name is required')
@@ -94,6 +95,20 @@ router.post('/', orderValidation, async (req, res) => {
       );
     }
 
+    // ── Step 3b: Check for low stock and send alert ──
+    try {
+      const itemIds = items.map(i => i.id);
+      const lowStockResult = await client.query(
+        `SELECT id, name, brand, stock, icon FROM medicines WHERE id = ANY($1) AND stock <= 5`,
+        [itemIds]
+      );
+      if (lowStockResult.rows.length > 0) {
+        sendLowStockAlert(lowStockResult.rows); // non-blocking
+      }
+    } catch (e) {
+      console.error('Low stock check failed:', e.message);
+    }
+
     // ── Step 4: Get customer_id from token if logged in ──
     let customer_id = null;
     try {
@@ -139,6 +154,7 @@ router.post('/', orderValidation, async (req, res) => {
       sendOrderConfirmation(email, customer_name, orderId, items, total);
     }
     sendAdminNotification(orderId, customer_name, phone, items, total);
+    sendNewOrderWhatsApp(orderId, customer_name, phone, items, total);
 
     res.json({
       success: true,
