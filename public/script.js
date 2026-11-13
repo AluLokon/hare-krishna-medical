@@ -626,3 +626,189 @@ async function useMyLocation() {
     else alert('Could not get your location. Please enter manually.');
   }, { timeout: 10000 });
 }
+// ── REVIEWS ──────────────────────────────────────────────────────
+// Cache: { medicineId: { avg_rating, total } }
+const reviewCache = {};
+
+async function loadReviewsForVisible() {
+  const cards = document.querySelectorAll('.product-card[data-id]');
+  const ids = [...cards].map(c => c.dataset.id).filter(id => !reviewCache[id]);
+  if (!ids.length) return;
+  // Load in parallel (batch up to 10)
+  await Promise.all(ids.slice(0, 10).map(async id => {
+    try {
+      const res = await fetch(`/api/reviews/${id}`);
+      const data = await res.json();
+      reviewCache[id] = { avg: data.avg_rating || 0, total: data.total || 0 };
+    } catch { reviewCache[id] = { avg: 0, total: 0 }; }
+  }));
+  // Inject stars into cards
+  cards.forEach(card => {
+    const id = card.dataset.id;
+    const r = reviewCache[id];
+    if (!r) return;
+    let el = card.querySelector('.product-stars');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'product-stars';
+      el.style.cssText = 'font-size:12px;color:#f59e0b;margin:2px 0 4px;cursor:pointer';
+      const nameEl = card.querySelector('.product-brand');
+      if (nameEl) nameEl.after(el);
+    }
+    if (r.total > 0) {
+      const full = Math.floor(r.avg);
+      const stars = '★'.repeat(full) + '☆'.repeat(5 - full);
+      el.innerHTML = `<span onclick="openReviewModal(${id})">${stars} <span style="color:#6b7280">(${r.total})</span></span>`;
+    } else {
+      el.innerHTML = `<span onclick="openReviewModal(${id})" style="color:#9ca3af">☆☆☆☆☆ <span style="font-size:11px">Be first to review</span></span>`;
+    }
+  });
+}
+
+// Patch renderProducts to add data-id and load reviews after render
+const _origRenderProducts = renderProducts;
+window.renderProducts = function(medicines) {
+  _origRenderProducts(medicines);
+  // Add data-id to each card
+  const grid = document.getElementById('productsGrid');
+  const cards = grid.querySelectorAll('.product-card');
+  medicines.forEach((m, i) => {
+    if (cards[i]) cards[i].dataset.id = m.id;
+  });
+  loadReviewsForVisible();
+};
+
+// ── REVIEW MODAL ──
+function openReviewModal(medicineId) {
+  const med = allMedicines.find(m => m.id === medicineId);
+  const token = localStorage.getItem('customerToken');
+
+  // Create modal if not exists
+  let overlay = document.getElementById('reviewOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'reviewOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+    overlay.onclick = e => { if (e.target === overlay) closeReviewModal(); };
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:24px;max-height:85vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="font-size:16px;color:#1a1a2e">Reviews — ${med ? med.name : 'Medicine'}</h3>
+        <button onclick="closeReviewModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280">✕</button>
+      </div>
+      <div id="reviewsList"><div style="text-align:center;padding:20px;color:#9ca3af">⏳ Loading...</div></div>
+      ${token ? `
+      <div id="writeReview" style="margin-top:16px;border-top:1px solid #f3f4f6;padding-top:16px">
+        <p style="font-size:13px;font-weight:700;color:#374151;margin-bottom:10px">Write a Review</p>
+        <div id="starPicker" style="font-size:28px;margin-bottom:12px;cursor:pointer">
+          <span onclick="setReviewStar(1,${medicineId})" class="rstar" data-v="1">☆</span>
+          <span onclick="setReviewStar(2,${medicineId})" class="rstar" data-v="2">☆</span>
+          <span onclick="setReviewStar(3,${medicineId})" class="rstar" data-v="3">☆</span>
+          <span onclick="setReviewStar(4,${medicineId})" class="rstar" data-v="4">☆</span>
+          <span onclick="setReviewStar(5,${medicineId})" class="rstar" data-v="5">☆</span>
+        </div>
+        <textarea id="reviewComment" placeholder="Share your experience (optional)..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:70px;outline:none" onfocus="this.style.borderColor='#0f6b3a'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+        <button onclick="submitReview(${medicineId})" id="submitReviewBtn"
+          style="margin-top:10px;width:100%;padding:11px;background:#0f6b3a;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
+          Submit Review
+        </button>
+        <div id="reviewMsg" style="margin-top:8px;font-size:13px;text-align:center"></div>
+      </div>` : `
+      <p style="text-align:center;font-size:13px;color:#6b7280;margin-top:12px;padding-top:12px;border-top:1px solid #f3f4f6">
+        <a href="#" onclick="closeReviewModal();openAuthModal(event)" style="color:#0f6b3a;font-weight:700">Login</a> to write a review
+      </p>`}
+    </div>`;
+
+  overlay.style.display = 'flex';
+  window._reviewMedId = medicineId;
+  window._reviewRating = 0;
+  fetchAndShowReviews(medicineId);
+}
+
+function closeReviewModal() {
+  const o = document.getElementById('reviewOverlay');
+  if (o) o.style.display = 'none';
+}
+
+async function fetchAndShowReviews(medicineId) {
+  const list = document.getElementById('reviewsList');
+  if (!list) return;
+  try {
+    const res = await fetch(`/api/reviews/${medicineId}`);
+    const data = await res.json();
+    if (!data.reviews.length) {
+      list.innerHTML = '<div style="text-align:center;padding:16px;color:#9ca3af;font-size:13px">No reviews yet. Be the first!</div>';
+      return;
+    }
+    const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+    list.innerHTML = `
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:32px;font-weight:800;color:#1a1a2e">${data.avg_rating}</div>
+        <div style="color:#f59e0b;font-size:18px">${stars(Math.round(data.avg_rating))}</div>
+        <div style="font-size:12px;color:#9ca3af">${data.total} review${data.total !== 1 ? 's' : ''}</div>
+      </div>
+      ${data.reviews.map(r => `
+        <div style="padding:12px 0;border-bottom:1px solid #f3f4f6">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:#374151">${r.customer_name}</span>
+            <span style="color:#f59e0b;font-size:14px">${stars(r.rating)}</span>
+          </div>
+          ${r.comment ? `<div style="font-size:13px;color:#4b5563">${r.comment}</div>` : ''}
+          <div style="font-size:11px;color:#9ca3af;margin-top:3px">${new Date(r.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+        </div>`).join('')}`;
+  } catch {
+    list.innerHTML = '<div style="color:#ef4444;font-size:13px;text-align:center">Failed to load reviews.</div>';
+  }
+}
+
+function setReviewStar(val, medicineId) {
+  window._reviewRating = val;
+  document.querySelectorAll('.rstar').forEach(s => {
+    s.textContent = parseInt(s.dataset.v) <= val ? '★' : '☆';
+    s.style.color = parseInt(s.dataset.v) <= val ? '#f59e0b' : '#d1d5db';
+  });
+}
+
+async function submitReview(medicineId) {
+  const rating = window._reviewRating;
+  const comment = document.getElementById('reviewComment')?.value?.trim();
+  const btn = document.getElementById('submitReviewBtn');
+  const msg = document.getElementById('reviewMsg');
+  const token = localStorage.getItem('customerToken');
+
+  if (!rating) { msg.style.color = '#ef4444'; msg.textContent = 'Please select a star rating.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  msg.textContent = '';
+
+  try {
+    const res = await fetch(`/api/reviews/${medicineId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ rating, comment })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      msg.style.color = '#0f6b3a';
+      msg.textContent = '✅ Review submitted! Thank you.';
+      btn.textContent = 'Submitted ✓';
+      delete reviewCache[medicineId]; // clear cache so it refreshes
+      setTimeout(() => fetchAndShowReviews(medicineId), 800);
+      setTimeout(() => loadReviewsForVisible(), 1000);
+    } else {
+      msg.style.color = '#ef4444';
+      msg.textContent = data.error || 'Failed to submit.';
+      btn.disabled = false;
+      btn.textContent = 'Submit Review';
+    }
+  } catch {
+    msg.style.color = '#ef4444';
+    msg.textContent = 'Network error. Try again.';
+    btn.disabled = false;
+    btn.textContent = 'Submit Review';
+  }
+}

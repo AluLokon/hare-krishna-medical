@@ -363,6 +363,12 @@ function renderOrderCard(order) {
           <span>₹${parseFloat(order.total).toFixed(2)}</span>
         </div>
       </div>
+      <div style="margin-bottom:16px;text-align:center">
+        <a href="/invoice.html?id=${order.id}"
+          style="display:inline-block;background:#f0faf5;color:#0f6b3a;border:2px solid #0f6b3a;padding:10px 24px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">
+          🧾 Download Invoice
+        </a>
+      </div>
       <div class="contact-section">
         <p>Need help with your order?</p>
         <a href="tel:7846870485">📞 78468 70485</a> &nbsp;|&nbsp;

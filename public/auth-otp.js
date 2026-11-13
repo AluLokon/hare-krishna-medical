@@ -381,19 +381,40 @@ async function openOrdersPanel() {
       return;
     }
 
+    const statusConfig = {
+      pending:    { label: 'Order Placed',     color: '#f59e0b', bg: '#fef3c7', icon: '📋' },
+      confirmed:  { label: 'Confirmed',         color: '#3b82f6', bg: '#dbeafe', icon: '✅' },
+      dispatched: { label: 'Out for Delivery',  color: '#8b5cf6', bg: '#ede9fe', icon: '🚚' },
+      delivered:  { label: 'Delivered',         color: '#0f6b3a', bg: '#d1fae5', icon: '🏠' },
+      cancelled:  { label: 'Cancelled',         color: '#ef4444', bg: '#fee2e2', icon: '❌' }
+    };
+
     body.innerHTML = orders.map(o => {
       const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
-      const itemNames = items.slice(0, 2).map(i => `${i.name} ×${i.qty}`).join(', ');
-      const more = items.length > 2 ? ` +${items.length - 2} more` : '';
       const date = new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-      const statusClass = `status-${(o.status || 'pending').toLowerCase()}`;
-      return `<div class="order-card">
-        <div class="order-card-header">
-          <div><div class="order-id">#${o.id}</div><div class="order-date">${date}</div></div>
-          <span class="order-status ${statusClass}">${(o.status || 'Pending').charAt(0).toUpperCase() + (o.status || 'pending').slice(1)}</span>
+      const status = (o.status || 'pending').toLowerCase();
+      const sc = statusConfig[status] || statusConfig.pending;
+      const allItems = items.map(i => `<div style="display:flex;justify-content:space-between;font-size:12px;color:#4b5563;padding:3px 0;border-bottom:1px solid #f3f4f6"><span>${i.name} ×${i.qty}</span><span style="font-weight:600">₹${(i.qty*i.price).toFixed(2)}</span></div>`).join('');
+
+      return `<div style="background:white;border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #f0f0f0">
+        <div style="padding:14px 16px;border-bottom:1px solid #f3f4f6">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:16px;font-weight:800;color:#1a1a2e">#${o.id}</span>
+            <span style="font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;background:${sc.bg};color:${sc.color}">${sc.icon} ${sc.label}</span>
+          </div>
+          <div style="font-size:12px;color:#9ca3af">${date}</div>
         </div>
-        <div class="order-items">${itemNames}${more}</div>
-        <div class="order-total">₹${parseFloat(o.total).toFixed(2)}</div>
+        <div style="padding:12px 16px;border-bottom:1px solid #f3f4f6">
+          ${allItems}
+          <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:#1a1a2e;padding-top:8px;margin-top:4px">
+            <span>Total</span><span style="color:#0f6b3a">₹${parseFloat(o.total).toFixed(2)}</span>
+          </div>
+        </div>
+        <div style="padding:10px 16px;display:flex;gap:8px">
+          <a href="/track.html?id=${o.id}" style="flex:1;text-align:center;padding:9px;background:#0f6b3a;color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">📦 Track</a>
+          <a href="/invoice.html?id=${o.id}" style="flex:1;text-align:center;padding:9px;background:#f0faf5;color:#0f6b3a;border:1.5px solid #0f6b3a;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">🧾 Invoice</a>
+          <button onclick="reorderItems(${JSON.stringify(JSON.stringify(items))})" style="flex:1;padding:9px;background:#f0faf5;color:#0f6b3a;border:1.5px solid #0f6b3a;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔄 Reorder</button>
+        </div>
       </div>`;
     }).join('');
 
@@ -461,6 +482,27 @@ window.openProfileSidebar = openProfileSidebar;
 window.closeProfileSidebar = closeProfileSidebar;
 window.logout = logout;
 window.openOrdersPanel = openOrdersPanel;
+
+// ── REORDER ──
+function reorderItems(itemsJson) {
+  try {
+    const items = JSON.parse(itemsJson);
+    // Use cart from script.js
+    items.forEach(item => {
+      if (window.cart) {
+        const existing = window.cart.find(c => c.id === item.id);
+        if (existing) existing.qty += item.qty;
+        else window.cart.push({ ...item });
+      }
+    });
+    if (window.saveCart) window.saveCart();
+    if (window.updateCartBar) window.updateCartBar();
+    closeProfileSidebar();
+    closeOrdersPanel();
+    setTimeout(() => { if (window.openCart) window.openCart(); }, 300);
+  } catch(e) { alert('Could not reorder. Please try again.'); }
+}
+window.reorderItems = reorderItems;
 window.closeOrdersPanel = closeOrdersPanel;
 window.openAddressPanel = openAddressPanel;
 window.saveAddress = saveAddress;

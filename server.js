@@ -12,6 +12,7 @@ const { router: customersRouter } = require('./routes/customers');
 const paymentRouter = require('./routes/payment');
 const otpRouter = require('./routes/otp');
 const emailOtpRouter = require('./routes/email-otp');
+const reviewsRouter = require('./routes/reviews');
 const verifyToken = require('./middleware');
 
 const app = express();
@@ -75,6 +76,7 @@ app.use('/api/customers', customersRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/otp', otpRouter);
 app.use('/api/email-otp', emailOtpRouter);
+app.use('/api/reviews', reviewsRouter);
 
 // ── Fix 6: Global error handler — hide stack traces ──
 app.use((err, req, res, next) => {
