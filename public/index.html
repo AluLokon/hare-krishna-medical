@@ -205,8 +205,8 @@
         <div class="auth-step" id="step-otp">
           <div style="text-align:center;margin-bottom:20px">
             <div style="font-size:40px;margin-bottom:8px">✉️</div>
-            <h3 style="color:#1a1a2e;margin-bottom:6px">Verify your email</h3>
-            <p style="font-size:13px;color:#6b7280">We sent a 6-digit OTP to<br><strong id="otpEmailDisplay" style="color:#0f6b3a"></strong></p>
+            <h3 style="color:#192b20;margin-bottom:6px;font-weight:900">Verify your email</h3>
+            <p style="font-size:13px;color:#6b7c72;font-weight:500">We sent a 6-digit OTP to<br><strong id="otpEmailDisplay" style="color:#0f6b3a"></strong></p>
           </div>
           <div class="otp-boxes">
             <input class="otp-box" type="text" inputmode="numeric" maxlength="1">
@@ -290,23 +290,24 @@
     </div>
     <div class="footer-bottom">© 2026 Sitaram Medical Store. All rights reserved.</div>
   </footer>
-  <!-- Bottom Nav Bar (mobile) -->
-<nav class="bottom-nav">
-  <div class="bottom-nav-inner">
-    <button class="bottom-nav-btn active" onclick="window.scrollTo(0,0)">
-      <span class="nav-icon">🏠</span>
-      Home
-    </button>
-    <a class="bottom-nav-btn" href="/track.html">
-      <span class="nav-icon">📦</span>
-      Track Order
-    </a>
-    <button class="bottom-nav-btn" onclick="openAuthOrProfile()">
-      <span class="nav-icon">👤</span>
-      My Account
-    </button>
-  </div>
-</nav>
+
+  <!-- BOTTOM NAV BAR (mobile only) -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="bottom-nav-btn active" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        <span class="nav-icon">🏠</span>
+        Home
+      </button>
+      <a class="bottom-nav-btn" href="/track.html">
+        <span class="nav-icon">📦</span>
+        Track Order
+      </a>
+      <button class="bottom-nav-btn" onclick="openAuthOrProfile()">
+        <span class="nav-icon">👤</span>
+        My Account
+      </button>
+    </div>
+  </nav>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="script.js"></script>
@@ -322,6 +323,34 @@
     document.getElementById('searchInput').addEventListener('input', function() {
       document.getElementById('conditionsSection').style.display = this.value.trim() ? 'none' : '';
     });
+
+    // Bottom nav: open auth modal OR profile sidebar depending on login state
+    function openAuthOrProfile() {
+      const token = localStorage.getItem('customerToken');
+      if (token) {
+        // logged in — open profile sidebar
+        if (typeof openProfileSidebar === 'function') {
+          openProfileSidebar();
+        } else if (typeof openAuthModal === 'function') {
+          openAuthModal({ preventDefault: () => {} });
+        }
+      } else {
+        // not logged in — open auth/login modal
+        if (typeof openAuthModal === 'function') {
+          openAuthModal({ preventDefault: () => {} });
+        }
+      }
+    }
+
+    // Keep bottom nav "My Account" icon updated when logged in
+    function updateBottomNavAccount() {
+      const token = localStorage.getItem('customerToken');
+      const btn = document.querySelector('.bottom-nav-btn:last-child');
+      if (btn) {
+        btn.querySelector('.nav-icon').textContent = token ? '👤' : '👤';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', updateBottomNavAccount);
   </script>
 </body>
 </html>
