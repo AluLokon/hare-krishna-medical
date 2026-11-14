@@ -4,208 +4,285 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Track Order — Sitaram Medical Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #f5f7fa; min-height: 100vh; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #0f6b3a; --green-dark: #09421f; --green-mid: #138a4a;
+      --green-light: #e3f4eb; --green-pale: #f1faf5;
+      --text: #192b20; --muted: #6b7c72; --border: #ddeae2; --bg: #f3f9f5;
+      --r: 14px; --r-sm: 10px;
+    }
+    body {
+      font-family: 'Nunito', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
 
-    .header {
-      background: linear-gradient(135deg, #0f6b3a, #1a9b56);
-      padding: 16px 20px;
+    /* Header */
+    .page-header {
+      background: linear-gradient(135deg, var(--green-dark), var(--green));
+      padding: 14px 20px;
       display: flex;
       align-items: center;
       gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 12px rgba(15,107,58,0.3);
     }
-    .header a { color: white; text-decoration: none; font-size: 20px; }
-    .header-title { color: white; }
-    .header-title strong { font-size: 17px; display: block; }
-    .header-title span { font-size: 12px; opacity: 0.85; }
+    .back-btn {
+      color: white;
+      text-decoration: none;
+      font-size: 22px;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.15);
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.25); }
+    .header-info { flex: 1; }
+    .header-info strong { font-size: 17px; font-weight: 900; color: white; display: block; }
+    .header-info span { font-size: 12px; color: rgba(255,255,255,0.78); font-weight: 600; }
 
-    .container { max-width: 500px; margin: 0 auto; padding: 20px 16px; }
+    .container { max-width: 500px; margin: 0 auto; padding: 20px 16px 48px; }
 
+    /* Search card */
     .search-card {
       background: white;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      border-radius: 18px;
+      padding: 22px 20px;
+      box-shadow: 0 2px 14px rgba(15,107,58,0.1);
       margin-bottom: 20px;
+      border: 1.5px solid var(--border);
     }
-    .search-card h2 { font-size: 18px; color: #1a1a2e; margin-bottom: 6px; }
-    .search-card p { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+    .search-card h2 { font-size: 17px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
+    .search-card p { font-size: 13px; color: var(--muted); margin-bottom: 16px; font-weight: 500; line-height: 1.5; }
 
-    .input-row {
-      display: flex;
-      gap: 10px;
-    }
+    .input-row { display: flex; gap: 10px; }
     .input-row input {
       flex: 1;
-      padding: 12px 14px;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
-      font-size: 16px;
+      padding: 12px 15px;
+      border: 2px solid var(--border);
+      border-radius: var(--r-sm);
+      font-size: 15px;
       font-family: inherit;
+      font-weight: 600;
       outline: none;
-      color: #1a1a2e;
-      transition: border-color 0.2s;
+      color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
     }
-    .input-row input:focus { border-color: #0f6b3a; }
+    .input-row input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(15,107,58,0.1);
+    }
     .track-btn {
       padding: 12px 20px;
-      background: #0f6b3a;
+      background: var(--green);
       color: white;
       border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
+      border-radius: var(--r-sm);
+      font-size: 14px;
+      font-weight: 900;
       cursor: pointer;
       font-family: inherit;
       white-space: nowrap;
+      transition: background 0.15s;
     }
+    .track-btn:hover { background: var(--green-mid); }
     .track-btn:disabled { background: #9ca3af; cursor: not-allowed; }
 
     .error-msg {
-      background: #fee2e2;
-      color: #991b1b;
+      background: #fff0f0;
+      color: #dc2626;
       padding: 10px 14px;
-      border-radius: 8px;
+      border-radius: 9px;
       font-size: 13px;
+      font-weight: 700;
       margin-top: 12px;
+      border: 1px solid #fca5a5;
       display: none;
     }
     .error-msg.show { display: block; }
 
     /* Order result card */
-    .order-card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      overflow: hidden;
-      display: none;
-    }
-    .order-card.show { display: block; }
+    .order-result { display: none; }
+    .order-result.show { display: block; }
 
-    .order-card-header {
-      background: linear-gradient(135deg, #0f6b3a, #1a9b56);
+    .result-card {
+      background: white;
+      border-radius: 18px;
+      border: 1.5px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 2px 14px rgba(15,107,58,0.1);
+    }
+
+    .result-header {
+      background: linear-gradient(135deg, var(--green-dark), var(--green));
       padding: 20px;
       color: white;
     }
-    .order-id-label { font-size: 12px; opacity: 0.85; margin-bottom: 4px; }
-    .order-id-num { font-size: 28px; font-weight: 800; }
-    .order-date { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+    .result-header .oid-label { font-size: 11.5px; opacity: 0.82; font-weight: 700; margin-bottom: 3px; }
+    .result-header .oid-num { font-size: 30px; font-weight: 900; letter-spacing: -0.02em; }
+    .result-header .oid-date { font-size: 12px; opacity: 0.78; margin-top: 4px; font-weight: 500; }
 
-    .order-card-body { padding: 20px; }
+    .result-body { padding: 20px; }
 
-    /* Status timeline */
-    .timeline { margin-bottom: 24px; }
-    .timeline-title { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 16px; }
+    /* Cancelled banner */
+    .cancelled-banner {
+      background: #fff0f0;
+      color: #dc2626;
+      padding: 12px 16px;
+      border-radius: 11px;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 18px;
+      border: 1px solid #fca5a5;
+    }
 
-    .timeline-steps { position: relative; }
-    .timeline-step {
+    /* Timeline */
+    .timeline { margin-bottom: 22px; }
+    .tl-title { font-size: 13.5px; font-weight: 900; color: var(--text); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.03em; }
+
+    .tl-step {
       display: flex;
       gap: 14px;
-      margin-bottom: 0;
       position: relative;
     }
-    .timeline-step:not(:last-child)::after {
+    .tl-step:not(:last-child)::after {
       content: '';
       position: absolute;
-      left: 15px;
-      top: 32px;
+      left: 15px; top: 33px;
       width: 2px;
-      height: calc(100% - 8px);
-      background: #e5e7eb;
+      height: calc(100% - 10px);
+      background: var(--border);
     }
-    .timeline-step.done:not(:last-child)::after { background: #0f6b3a; }
+    .tl-step.done:not(:last-child)::after { background: var(--green); }
 
-    .step-icon {
-      width: 32px;
-      height: 32px;
+    .tl-dot {
+      width: 32px; height: 32px;
       border-radius: 50%;
-      background: #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: var(--border);
+      display: flex; align-items: center; justify-content: center;
       font-size: 14px;
       flex-shrink: 0;
       z-index: 1;
       position: relative;
     }
-    .timeline-step.done .step-icon { background: #0f6b3a; }
-    .timeline-step.active .step-icon { background: #0f6b3a; box-shadow: 0 0 0 4px #d1fae5; }
+    .tl-step.done .tl-dot { background: var(--green); }
+    .tl-step.active .tl-dot {
+      background: var(--green);
+      box-shadow: 0 0 0 5px rgba(15,107,58,0.18);
+    }
+    .tl-info { padding-bottom: 20px; flex: 1; }
+    .tl-label { font-size: 14px; font-weight: 800; color: var(--muted); }
+    .tl-step.done .tl-label, .tl-step.active .tl-label { color: var(--green); }
+    .tl-desc { font-size: 12px; color: var(--muted); margin-top: 2px; font-weight: 500; }
+    .tl-time { font-size: 11.5px; color: #b0c4b8; margin-top: 3px; font-weight: 600; }
 
-    .step-content { padding-bottom: 20px; flex: 1; }
-    .step-label { font-size: 14px; font-weight: 600; color: #374151; }
-    .timeline-step.done .step-label, .timeline-step.active .step-label { color: #0f6b3a; }
-    .step-time { font-size: 12px; color: #9ca3af; margin-top: 2px; }
-    .step-desc { font-size: 12px; color: #6b7280; margin-top: 3px; }
-
-    /* Order items */
-    .items-section { border-top: 1px solid #f3f4f6; padding-top: 16px; margin-bottom: 16px; }
-    .items-title { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 10px; }
+    /* Items section */
+    .items-sec {
+      border-top: 1.5px solid var(--green-light);
+      padding-top: 16px;
+      margin-bottom: 16px;
+    }
+    .items-title { font-size: 13.5px; font-weight: 900; color: var(--text); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
     .order-item {
       display: flex;
       justify-content: space-between;
-      font-size: 13px;
+      font-size: 13.5px;
+      font-weight: 600;
       color: #4b5563;
-      padding: 6px 0;
-      border-bottom: 1px solid #f9fafb;
+      padding: 7px 0;
+      border-bottom: 1px solid #f0f9f4;
     }
     .order-item:last-child { border-bottom: none; }
+    .order-item span:last-child { font-weight: 800; color: var(--text); }
+
     .order-total-row {
       display: flex;
       justify-content: space-between;
       font-size: 15px;
-      font-weight: 700;
-      color: #1a1a2e;
+      font-weight: 900;
+      color: var(--green);
       padding-top: 10px;
-      border-top: 2px solid #f3f4f6;
+      border-top: 2px solid var(--green-light);
     }
 
-    /* Prescription badge */
-    .rx-badge {
-      display: inline-block;
-      background: #fef3c7;
-      color: #92400e;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 20px;
-      margin-bottom: 10px;
+    /* Rx badge */
+    .rx-info {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 14px;
     }
+    .rx-review  { background: #fef3c7; color: #92400e; }
     .rx-approved { background: #d1fae5; color: #065f46; }
     .rx-rejected { background: #fee2e2; color: #991b1b; }
 
-    .contact-section {
-      background: #f9fafb;
-      border-radius: 10px;
+    /* Action buttons */
+    .result-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .result-action {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 14px;
+      border-radius: var(--r-sm);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      background: var(--bg);
+      transition: all 0.15s;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .result-action:hover { border-color: var(--green); color: var(--green); background: var(--green-pale); }
+    .result-action.primary { background: var(--green); color: white; border-color: var(--green); }
+    .result-action.primary:hover { background: var(--green-mid); }
+
+    /* Contact */
+    .contact-box {
+      background: var(--green-pale);
+      border-radius: 11px;
       padding: 14px;
       text-align: center;
-      margin-top: 16px;
+      border: 1.5px solid var(--border);
     }
-    .contact-section p { font-size: 12px; color: #9ca3af; margin-bottom: 6px; }
-    .contact-section a {
-      color: #0f6b3a;
-      font-weight: 700;
-      font-size: 14px;
-      text-decoration: none;
-    }
+    .contact-box p { font-size: 12px; color: var(--muted); margin-bottom: 7px; font-weight: 500; }
+    .contact-box a { color: var(--green); font-weight: 800; font-size: 14px; text-decoration: none; }
+    .contact-box a:hover { text-decoration: underline; }
 
-    .cancelled-banner {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      text-align: center;
-      margin-bottom: 16px;
+    @media (max-width: 400px) {
+      .container { padding: 14px 12px 40px; }
+      .result-header .oid-num { font-size: 26px; }
+      .result-actions { flex-direction: column; }
     }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <a href="/">←</a>
-  <div class="header-title">
+<div class="page-header">
+  <a class="back-btn" href="/">←</a>
+  <div class="header-info">
     <strong>Track Your Order</strong>
     <span>Sitaram Medical Store</span>
   </div>
@@ -214,7 +291,7 @@
 <div class="container">
   <div class="search-card">
     <h2>🔍 Track Order</h2>
-    <p>Enter your Order ID to check the current status of your order.</p>
+    <p>Enter your Order ID to check the live status of your delivery.</p>
     <div class="input-row">
       <input type="number" id="orderIdInput" placeholder="Enter Order ID (e.g. 42)"
         onkeypress="if(event.key==='Enter')trackOrder()">
@@ -223,18 +300,18 @@
     <div class="error-msg" id="errorMsg"></div>
   </div>
 
-  <div class="order-card" id="orderCard"></div>
+  <div class="order-result" id="orderResult"></div>
 </div>
 
 <script>
 async function trackOrder() {
   const input = document.getElementById('orderIdInput').value.trim();
   const errorEl = document.getElementById('errorMsg');
-  const card = document.getElementById('orderCard');
+  const result = document.getElementById('orderResult');
   const btn = document.getElementById('trackBtn');
 
   errorEl.classList.remove('show');
-  card.classList.remove('show');
+  result.classList.remove('show');
 
   if (!input || isNaN(input)) {
     errorEl.textContent = 'Please enter a valid Order ID.';
@@ -243,21 +320,18 @@ async function trackOrder() {
   }
 
   btn.disabled = true;
-  btn.textContent = 'Tracking...';
+  btn.textContent = '...';
 
   try {
     const res = await fetch(`/api/orders/${input}`);
     const data = await res.json();
-
     if (!res.ok) {
       errorEl.textContent = data.error || 'Order not found. Please check your Order ID.';
       errorEl.classList.add('show');
       return;
     }
-
-    renderOrderCard(data);
-    card.classList.add('show');
-
+    renderOrder(data);
+    result.classList.add('show');
   } catch (err) {
     errorEl.textContent = 'Network error. Please try again.';
     errorEl.classList.add('show');
@@ -267,41 +341,19 @@ async function trackOrder() {
   }
 }
 
-function renderOrderCard(order) {
-  const card = document.getElementById('orderCard');
+function renderOrder(order) {
+  const result = document.getElementById('orderResult');
   const status = order.status || 'pending';
   const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
-  const date = new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const date = new Date(order.created_at).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
 
   const steps = [
-    {
-      key: 'pending',
-      icon: '📋',
-      label: 'Order Placed',
-      desc: 'Your order has been received',
-      time: order.created_at
-    },
-    {
-      key: 'confirmed',
-      icon: '✅',
-      label: 'Order Confirmed',
-      desc: 'Store has confirmed your order',
-      time: order.confirmed_at
-    },
-    {
-      key: 'dispatched',
-      icon: '🚚',
-      label: 'Out for Delivery',
-      desc: 'Your order is on the way',
-      time: order.dispatched_at
-    },
-    {
-      key: 'delivered',
-      icon: '🏠',
-      label: 'Delivered',
-      desc: 'Order delivered successfully',
-      time: order.delivered_at
-    }
+    { key: 'pending',    icon: '📋', label: 'Order Placed',       desc: 'Your order has been received',       time: order.created_at },
+    { key: 'confirmed',  icon: '✅', label: 'Confirmed',           desc: 'Store has confirmed your order',     time: order.confirmed_at },
+    { key: 'dispatched', icon: '🚚', label: 'Out for Delivery',    desc: 'Your order is on the way',           time: order.dispatched_at },
+    { key: 'delivered',  icon: '🏠', label: 'Delivered',           desc: 'Order delivered successfully',       time: order.delivered_at }
   ];
 
   const statusOrder = ['pending', 'confirmed', 'dispatched', 'delivered'];
@@ -310,76 +362,66 @@ function renderOrderCard(order) {
 
   const stepsHtml = steps.map((step, i) => {
     let cls = '';
-    if (isCancelled) {
-      cls = i === 0 ? 'done' : '';
-    } else {
-      if (i < currentIdx) cls = 'done';
-      else if (i === currentIdx) cls = 'active done';
-    }
-    const timeStr = step.time ? new Date(step.time).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-    return `
-      <div class="timeline-step ${cls}">
-        <div class="step-icon">${cls ? step.icon : '○'}</div>
-        <div class="step-content">
-          <div class="step-label">${step.label}</div>
-          <div class="step-desc">${step.desc}</div>
-          ${timeStr ? `<div class="step-time">${timeStr}</div>` : ''}
-        </div>
-      </div>`;
+    if (isCancelled) { cls = i === 0 ? 'done' : ''; }
+    else { if (i < currentIdx) cls = 'done'; else if (i === currentIdx) cls = 'active done'; }
+    const timeStr = step.time
+      ? new Date(step.time).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+      : '';
+    return `<div class="tl-step ${cls}">
+      <div class="tl-dot">${cls ? step.icon : ''}</div>
+      <div class="tl-info">
+        <div class="tl-label">${step.label}</div>
+        <div class="tl-desc">${step.desc}</div>
+        ${timeStr ? `<div class="tl-time">${timeStr}</div>` : ''}
+      </div>
+    </div>`;
   }).join('');
 
   const itemsHtml = items.map(i =>
-    `<div class="order-item">
-      <span>${i.name} × ${i.qty}</span>
-      <span>₹${(i.qty * i.price).toFixed(2)}</span>
-    </div>`
+    `<div class="order-item"><span>${i.name} × ${i.qty}</span><span>₹${(i.qty * i.price).toFixed(2)}</span></div>`
   ).join('');
 
   let rxHtml = '';
   if (order.prescription_status) {
-    const rxClass = order.prescription_status === 'approved' ? 'rx-approved' : order.prescription_status === 'rejected' ? 'rx-rejected' : '';
-    const rxText = order.prescription_status === 'approved' ? '✅ Prescription Approved' : order.prescription_status === 'rejected' ? '❌ Prescription Rejected' : '⏳ Prescription Under Review';
-    rxHtml = `<div class="rx-badge ${rxClass}">${rxText}</div>`;
+    const cls = order.prescription_status === 'approved' ? 'rx-approved' : order.prescription_status === 'rejected' ? 'rx-rejected' : 'rx-review';
+    const txt = order.prescription_status === 'approved' ? '✅ Prescription Approved' : order.prescription_status === 'rejected' ? '❌ Prescription Rejected' : '⏳ Prescription Under Review';
+    rxHtml = `<div class="rx-info ${cls}">${txt}</div>`;
   }
 
-  card.innerHTML = `
-    <div class="order-card-header">
-      <div class="order-id-label">Order ID</div>
-      <div class="order-id-num">#${order.id}</div>
-      <div class="order-date">Placed on ${date}</div>
-    </div>
-    <div class="order-card-body">
-      ${isCancelled ? '<div class="cancelled-banner">❌ This order has been cancelled</div>' : ''}
-      ${rxHtml}
-      <div class="timeline">
-        <div class="timeline-title">Order Status</div>
-        <div class="timeline-steps">${stepsHtml}</div>
+  result.innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <div class="oid-label">Order ID</div>
+        <div class="oid-num">#${order.id}</div>
+        <div class="oid-date">Placed on ${date}</div>
       </div>
-      <div class="items-section">
-        <div class="items-title">Items Ordered</div>
-        ${itemsHtml}
-        <div class="order-total-row">
-          <span>Total</span>
-          <span>₹${parseFloat(order.total).toFixed(2)}</span>
+      <div class="result-body">
+        ${isCancelled ? '<div class="cancelled-banner">❌ This order has been cancelled</div>' : ''}
+        ${rxHtml}
+        <div class="timeline">
+          <div class="tl-title">Order Status</div>
+          ${stepsHtml}
         </div>
-      </div>
-      <div style="margin-bottom:16px;text-align:center">
-        <a href="/invoice.html?id=${order.id}"
-          style="display:inline-block;background:#f0faf5;color:#0f6b3a;border:2px solid #0f6b3a;padding:10px 24px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">
-          🧾 Download Invoice
-        </a>
-      </div>
-      <div class="contact-section">
-        <p>Need help with your order?</p>
-        <a href="tel:7846870485">📞 78468 70485</a> &nbsp;|&nbsp;
-        <a href="tel:8898870485">📞 88988 70485</a>
+        <div class="items-sec">
+          <div class="items-title">Items Ordered</div>
+          ${itemsHtml}
+          <div class="order-total-row"><span>Total</span><span>₹${parseFloat(order.total).toFixed(2)}</span></div>
+        </div>
+        <div class="result-actions">
+          <a class="result-action" href="/invoice.html?id=${order.id}">🧾 Invoice</a>
+          <a class="result-action primary" href="/">🛒 Shop More</a>
+        </div>
+        <div class="contact-box">
+          <p>Need help with your order?</p>
+          <a href="tel:7846870485">📞 78468 70485</a> &nbsp;|&nbsp;
+          <a href="tel:8898870485">📞 88988 70485</a>
+        </div>
       </div>
     </div>`;
 }
 
-// Auto-track if order ID in URL: track.html?id=42
-const urlParams = new URLSearchParams(window.location.search);
-const urlId = urlParams.get('id');
+// Auto-track from URL
+const urlId = new URLSearchParams(window.location.search).get('id');
 if (urlId) {
   document.getElementById('orderIdInput').value = urlId;
   trackOrder();
