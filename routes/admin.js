@@ -2,6 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
+let sendOrderNotification;
+try { ({ sendOrderNotification } = require('./push')); } catch(e) {}
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
@@ -98,6 +100,10 @@ router.patch('/orders/:id/status', adminAuth, async (req, res) => {
       [status, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+    // Send push notification to customer
+    if (sendOrderNotification) {
+      sendOrderNotification(id, status).catch(console.error);
+    }
     res.json(result.rows[0]);
   } catch (e) {
     res.status(500).json({ error: e.message });

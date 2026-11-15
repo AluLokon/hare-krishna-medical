@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Report — Sitaram Medical Store</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #0f6b3a; --green-dark: #09421f; --green-mid: #138a4a;
+      --green-light: #e3f4eb; --green-pale: #f1faf5;
+      --text: #192b20; --muted: #6b7c72; --border: #ddeae2; --bg: #f3f9f5;
+      --r: 14px; --r-sm: 10px;
+    }
+    body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Page header */
+    .page-header {
+      background: linear-gradient(110deg, var(--green-dark), var(--green));
+      padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .page-header-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn {
+      color: rgba(255,255,255,0.8); font-size: 18px; text-decoration: none;
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: rgba(255,255,255,0.15);
+      border: none; cursor: pointer;
+    }
+    .page-title { color: white; }
+    .page-title strong { font-size: 16px; font-weight: 900; display: block; }
+    .page-title span { font-size: 11.5px; opacity: 0.75; }
+    .print-btn {
+      background: rgba(255,255,255,0.2); color: white;
+      border: none; border-radius: 10px; padding: 9px 16px;
+      font-size: 13px; font-weight: 800; cursor: pointer; font-family: inherit;
+    }
+    .print-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* Controls */
+    .controls {
+      background: white; border-bottom: 1.5px solid var(--border);
+      padding: 14px 20px;
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    }
+    .ctrl-select, .ctrl-input {
+      padding: 9px 14px; border: 2px solid var(--border); border-radius: 10px;
+      font-size: 13.5px; font-family: inherit; font-weight: 700; color: var(--text);
+      background: white; -webkit-appearance: none;
+    }
+    .ctrl-select:focus, .ctrl-input:focus { outline: none; border-color: var(--green); }
+    .ctrl-btn {
+      padding: 9px 20px; background: var(--green); color: white;
+      border: none; border-radius: 10px; font-size: 13.5px; font-weight: 900;
+      cursor: pointer; font-family: inherit;
+    }
+    .ctrl-btn:hover { background: var(--green-mid); }
+    .custom-range { display: none; gap: 8px; align-items: center; }
+    .custom-range.show { display: flex; }
+
+    /* Main */
+    .report-wrap { max-width: 900px; margin: 24px auto; padding: 0 20px 60px; }
+
+    /* Report card */
+    .report-card {
+      background: white; border-radius: var(--r);
+      border: 1.5px solid var(--border);
+      overflow: hidden; margin-bottom: 20px;
+    }
+    .report-card-header {
+      background: linear-gradient(110deg, var(--green-dark), var(--green));
+      padding: 20px 24px; color: white;
+    }
+    .report-card-header h1 { font-size: 20px; font-weight: 900; }
+    .report-card-header p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+
+    /* Stat row */
+    .stat-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; border-bottom: 1.5px solid var(--border);
+    }
+    .stat-cell {
+      padding: 18px 20px; text-align: center;
+      border-right: 1.5px solid var(--border);
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-cell .lbl { font-size: 11px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+    .stat-cell .val { font-size: 26px; font-weight: 900; color: var(--text); line-height: 1; }
+    .stat-cell .val.green { color: var(--green); }
+    .stat-cell .sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
+    /* Section */
+    .section { padding: 20px 24px; border-bottom: 1.5px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+    .section h2 { font-size: 15px; font-weight: 900; margin-bottom: 14px; color: var(--text); }
+
+    /* Daily table */
+    .daily-table { width: 100%; border-collapse: collapse; }
+    .daily-table th {
+      text-align: left; padding: 8px 12px;
+      font-size: 11.5px; color: var(--muted); font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      background: var(--green-pale); border-bottom: 1.5px solid var(--border);
+    }
+    .daily-table td {
+      padding: 10px 12px; font-size: 13.5px; font-weight: 600;
+      border-bottom: 1px solid var(--green-pale);
+    }
+    .daily-table tr:last-child td { border-bottom: none; }
+    .daily-table tr:hover td { background: var(--green-pale); }
+
+    /* Revenue bar */
+    .bar-wrap { margin-top: 4px; }
+    .bar { height: 6px; border-radius: 3px; background: var(--green); min-width: 2px; }
+
+    /* Top medicines */
+    .med-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--green-pale);
+    }
+    .med-row:last-child { border-bottom: none; }
+    .med-rank {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--green-light); color: var(--green);
+      font-size: 13px; font-weight: 900;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .med-rank.gold { background: #fef3c7; color: #92400e; }
+    .med-rank.silver { background: #f1f5f9; color: #475569; }
+    .med-rank.bronze { background: #fff7ed; color: #9a3412; }
+    .med-info { flex: 1; }
+    .med-name { font-size: 14px; font-weight: 800; }
+    .med-qty { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .med-rev { font-size: 15px; font-weight: 900; color: var(--green); }
+
+    /* Payment split */
+    .payment-split { display: flex; gap: 14px; }
+    .pay-box {
+      flex: 1; background: var(--green-pale); border-radius: 11px;
+      padding: 16px; text-align: center; border: 1.5px solid var(--border);
+    }
+    .pay-box .pay-icon { font-size: 28px; margin-bottom: 6px; }
+    .pay-box .pay-label { font-size: 11.5px; color: var(--muted); font-weight: 700; }
+    .pay-box .pay-amount { font-size: 22px; font-weight: 900; color: var(--green); margin: 4px 0; }
+    .pay-box .pay-pct { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+    /* Loading / empty */
+    .report-placeholder {
+      text-align: center; padding: 60px 20px;
+      background: white; border-radius: var(--r);
+      border: 1.5px solid var(--border);
+    }
+    .report-placeholder .ei { font-size: 48px; margin-bottom: 14px; }
+    .report-placeholder h3 { font-size: 17px; font-weight: 900; color: var(--text); margin-bottom: 6px; }
+    .report-placeholder p { font-size: 14px; color: var(--muted); font-weight: 500; }
+
+    /* Login gate */
+    #loginGate { background: white; border-radius: var(--r); border: 1.5px solid var(--border); padding: 36px; text-align: center; margin-top: 40px; }
+    #loginGate h2 { font-size: 20px; font-weight: 900; margin-bottom: 10px; }
+    #loginGate p { color: var(--muted); margin-bottom: 18px; font-size: 14px; font-weight: 500; }
+    #loginGate input {
+      width: 100%; max-width: 300px; padding: 12px 16px;
+      border: 2px solid var(--border); border-radius: 11px;
+      font-size: 15px; font-family: inherit; font-weight: 600;
+      display: block; margin: 0 auto 12px;
+    }
+    #loginGate input:focus { outline: none; border-color: var(--green); }
+    #loginGate button {
+      padding: 12px 28px; background: var(--green); color: white;
+      border: none; border-radius: 11px; font-size: 15px; font-weight: 900;
+      cursor: pointer; font-family: inherit;
+    }
+    #loginError { color: #dc2626; font-size: 13px; font-weight: 700; margin-bottom: 10px; display: none; }
+
+    @media print {
+      .page-header, .controls, .print-btn { display: none !important; }
+      body { background: white; }
+      .report-wrap { margin: 0; padding: 0; max-width: 100%; }
+      .report-card { border: none; box-shadow: none; }
+    }
+    @media (max-width: 600px) {
+      .stat-row { grid-template-columns: repeat(2, 1fr); }
+      .stat-cell { border-bottom: 1.5px solid var(--border); }
+      .payment-split { flex-direction: column; }
+      .controls { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-header-left">
+    <a class="back-btn" href="/admin.html">←</a>
+    <div class="page-title">
+      <strong>📊 Sales Report</strong>
+      <span>Sitaram Medical Store</span>
+    </div>
+  </div>
+  <button class="print-btn" onclick="window.print()">🖨️ Print / PDF</button>
+</div>
+
+<div class="controls" id="controls" style="display:none">
+  <select class="ctrl-select" id="periodSelect" onchange="toggleCustom()">
+    <option value="monthly">This Month</option>
+    <option value="weekly">This Week</option>
+    <option value="custom">Custom Range</option>
+  </select>
+  <div class="custom-range" id="customRange">
+    <input type="date" class="ctrl-input" id="fromDate">
+    <span style="color:var(--muted);font-weight:700">to</span>
+    <input type="date" class="ctrl-input" id="toDate">
+  </div>
+  <button class="ctrl-btn" onclick="loadReport()">Generate Report →</button>
+</div>
+
+<div class="report-wrap">
+  <!-- Login gate -->
+  <div id="loginGate">
+    <div style="font-size:48px;margin-bottom:12px">📊</div>
+    <h2>Admin Login Required</h2>
+    <p>Enter your admin password to view sales reports</p>
+    <div id="loginError">Wrong password. Try again.</div>
+    <input type="password" id="adminKeyInput" placeholder="Admin password"
+      onkeypress="if(event.key==='Enter')gateLogin()">
+    <button onclick="gateLogin()">Login →</button>
+  </div>
+
+  <!-- Report output -->
+  <div id="reportOutput" style="display:none">
+    <div class="report-placeholder" id="reportPlaceholder">
+      <div class="ei">📊</div>
+      <h3>Generate a Report</h3>
+      <p>Select a period above and click Generate Report</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let ADMIN_KEY = sessionStorage.getItem('adminKey') || '';
+
+// Auto-login if key saved
+if (ADMIN_KEY) {
+  showApp();
+  loadReport();
+}
+
+function gateLogin() {
+  ADMIN_KEY = document.getElementById('adminKeyInput').value.trim();
+  fetch('/api/admin/stats', { headers: { 'x-admin-key': ADMIN_KEY } })
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(() => { sessionStorage.setItem('adminKey', ADMIN_KEY); showApp(); loadReport(); })
+    .catch(() => {
+      ADMIN_KEY = '';
+      document.getElementById('loginError').style.display = 'block';
+    });
+}
+
+function showApp() {
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('reportOutput').style.display = 'block';
+}
+
+function toggleCustom() {
+  const v = document.getElementById('periodSelect').value;
+  document.getElementById('customRange').classList.toggle('show', v === 'custom');
+}
+
+async function loadReport() {
+  const period = document.getElementById('periodSelect')?.value || 'monthly';
+  let url = `/api/reports/sales?period=${period}`;
+  if (period === 'custom') {
+    const from = document.getElementById('fromDate').value;
+    const to   = document.getElementById('toDate').value;
+    if (!from || !to) { alert('Please select a date range'); return; }
+    url += `&from=${from}&to=${to}`;
+  }
+
+  document.getElementById('reportPlaceholder').innerHTML = '<div class="ei">⏳</div><h3>Generating report...</h3>';
+
+  const res = await fetch(url, { headers: { 'x-admin-key': ADMIN_KEY } });
+  if (!res.ok) {
+    document.getElementById('reportPlaceholder').innerHTML = '<div class="ei">❌</div><h3>Failed to load</h3><p>' + (await res.json()).error + '</p>';
+    return;
+  }
+  const d = await res.json();
+  renderReport(d);
+}
+
+function renderReport(d) {
+  const s = d.summary;
+  const totalRev = parseFloat(s.revenue);
+  const onlineRev = parseFloat(s.online_revenue);
+  const codRev = parseFloat(s.cod_revenue);
+  const onlinePct = totalRev > 0 ? Math.round(onlineRev / totalRev * 100) : 0;
+  const codPct = 100 - onlinePct;
+  const maxDaily = Math.max(...(d.daily.map(r => parseFloat(r.revenue)) || [1]));
+
+  const html = `
+    <div class="report-card">
+      <div class="report-card-header">
+        <h1>💊 Sitaram Medical Store</h1>
+        <p>Sales Report · ${d.label}</p>
+        <p style="margin-top:4px;opacity:0.65;font-size:12px">Generated on ${new Date().toLocaleString('en-IN')}</p>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="stat-row">
+        <div class="stat-cell">
+          <div class="lbl">Total Revenue</div>
+          <div class="val green">₹${totalRev.toLocaleString('en-IN')}</div>
+          <div class="sub">excl. cancelled</div>
+        </div>
+        <div class="stat-cell">
+          <div class="lbl">Total Orders</div>
+          <div class="val">${s.total_orders}</div>
+          <div class="sub">${s.delivered} delivered</div>
+        </div>
+        <div class="stat-cell">
+          <div class="lbl">Avg Order Value</div>
+          <div class="val">₹${parseFloat(s.avg_order).toFixed(0)}</div>
+          <div class="sub">per order</div>
+        </div>
+        <div class="stat-cell">
+          <div class="lbl">New Customers</div>
+          <div class="val">${d.newCustomers}</div>
+          <div class="sub">registered</div>
+        </div>
+      </div>
+
+      <!-- Order status breakdown -->
+      <div class="section">
+        <h2>📦 Order Breakdown</h2>
+        <table class="daily-table">
+          <thead><tr><th>Status</th><th>Count</th><th>%</th></tr></thead>
+          <tbody>
+            ${d.byStatus.map(r => `
+              <tr>
+                <td><strong>${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</strong></td>
+                <td>${r.count}</td>
+                <td style="color:var(--muted)">${s.total_orders > 0 ? Math.round(r.count / s.total_orders * 100) : 0}%</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Payment split -->
+      <div class="section">
+        <h2>💳 Payment Methods</h2>
+        <div class="payment-split">
+          <div class="pay-box">
+            <div class="pay-icon">💳</div>
+            <div class="pay-label">Online Payment</div>
+            <div class="pay-amount">₹${onlineRev.toLocaleString('en-IN')}</div>
+            <div class="pay-pct">${onlinePct}% of revenue</div>
+          </div>
+          <div class="pay-box">
+            <div class="pay-icon">💵</div>
+            <div class="pay-label">Cash on Delivery</div>
+            <div class="pay-amount">₹${codRev.toLocaleString('en-IN')}</div>
+            <div class="pay-pct">${codPct}% of revenue</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily breakdown -->
+      ${d.daily.length > 0 ? `
+      <div class="section">
+        <h2>📅 Daily Breakdown</h2>
+        <table class="daily-table">
+          <thead><tr><th>Date</th><th>Orders</th><th>Revenue</th><th>Bar</th></tr></thead>
+          <tbody>
+            ${d.daily.map(r => {
+              const rev = parseFloat(r.revenue);
+              const pct = maxDaily > 0 ? Math.round(rev / maxDaily * 100) : 0;
+              const date = new Date(r.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', weekday: 'short' });
+              return `<tr>
+                <td>${date}</td>
+                <td>${r.orders}</td>
+                <td><strong style="color:var(--green)">₹${rev.toLocaleString('en-IN')}</strong></td>
+                <td><div class="bar-wrap"><div class="bar" style="width:${Math.max(pct, 2)}%"></div></div></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+
+      <!-- Top medicines -->
+      ${d.topMedicines.length > 0 ? `
+      <div class="section">
+        <h2>🏆 Top 10 Medicines Sold</h2>
+        ${d.topMedicines.map((m, i) => {
+          const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+          return `<div class="med-row">
+            <div class="med-rank ${rankClass}">${i + 1}</div>
+            <div class="med-info">
+              <div class="med-name">${m.name}</div>
+              <div class="med-qty">${m.qty_sold} units sold</div>
+            </div>
+            <div class="med-rev">₹${parseFloat(m.revenue).toLocaleString('en-IN')}</div>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+
+      <div class="section" style="text-align:center;color:var(--muted);font-size:12.5px;padding:16px 24px">
+        Sitaram Medical Store · Old Bus Stand, Digapahandi-761012, Ganjam, Odisha · 78468 70485
+      </div>
+    </div>
+  `;
+
+  document.getElementById('reportPlaceholder').outerHTML = '';
+  document.getElementById('reportOutput').innerHTML = html;
+}
+
+document.getElementById('adminKeyInput')?.addEventListener('keypress', e => {
+  if (e.key === 'Enter') gateLogin();
+});
+</script>
+</body>
+</html>
