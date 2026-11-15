@@ -3,1164 +3,1008 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Sitaram Medical Store</title>
+  <title>Admin — Sitaram Medical Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #0f6b3a; --green-dark: #09421f; --green-mid: #138a4a;
+      --green-light: #e3f4eb; --green-pale: #f1faf5;
+      --amber: #f59e0b; --red: #dc2626; --red-light: #fff0f0;
+      --blue: #2563eb; --blue-light: #eff6ff;
+      --purple: #7c3aed; --purple-light: #f5f3ff;
+      --text: #192b20; --muted: #6b7c72; --border: #ddeae2; --bg: #f3f9f5;
+      --white: #fff;
+      --r: 14px; --r-sm: 10px; --r-pill: 100px;
+      --shadow: 0 2px 12px rgba(15,107,58,0.1);
+    }
+    body {
+      font-family: 'Nunito', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
 
-    /* Login Screen */
-    .login-screen {
-      min-height: 100vh; display: flex;
-      align-items: center; justify-content: center;
+    /* ── LOGIN SCREEN ── */
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 100%);
     }
     .login-box {
-      background: white; padding: 2rem; border-radius: 16px;
-      width: min(380px, 94vw); box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      background: white;
+      border-radius: 22px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
       text-align: center;
     }
-    .login-box h1 { font-size: 22px; margin-bottom: 0.25rem; }
-    .login-box p { color: #777; font-size: 13px; margin-bottom: 1.5rem; }
+    .login-icon { font-size: 48px; margin-bottom: 10px; }
+    .login-box h1 { font-size: 22px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
+    .login-box p { font-size: 13px; color: var(--muted); margin-bottom: 24px; font-weight: 500; }
     .login-box input {
-      width: 100%; padding: 0.65rem 0.85rem; border-radius: 8px;
-      border: 1px solid #ddd; font-size: 14px;
-      font-family: inherit; margin-bottom: 10px;
+      width: 100%; padding: 13px 16px;
+      border: 2px solid var(--border); border-radius: 11px;
+      font-size: 15px; font-family: inherit; font-weight: 600;
+      color: var(--text); margin-bottom: 12px;
+      transition: border-color 0.18s, box-shadow 0.18s;
+      -webkit-appearance: none;
     }
-    .login-box button {
-      width: 100%; padding: 0.75rem; background: #3B6D11;
-      color: white; border: none; border-radius: 8px;
-      font-size: 15px; font-weight: 500; cursor: pointer;
-      font-family: inherit;
+    .login-box input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(15,107,58,0.1); }
+    .login-btn {
+      width: 100%; padding: 14px;
+      background: linear-gradient(110deg, var(--green-dark), var(--green));
+      color: white; border: none; border-radius: 11px;
+      font-size: 16px; font-weight: 900; cursor: pointer;
+      font-family: inherit; transition: opacity 0.15s;
     }
-    .login-box button:hover { background: #2d5509; }
-    .login-error { color: #A32D2D; font-size: 13px; margin-top: 8px; }
-
-    /* Dashboard */
-    .dashboard { display: none; }
-    header {
-      background: linear-gradient(135deg, #085041, #1D9E75);
-      color: white; padding: 1rem 1.5rem;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    header h1 { font-size: 18px; }
-    header p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
-    .logout-btn {
-      background: rgba(255,255,255,0.2); color: white;
-      border: none; padding: 6px 14px; border-radius: 8px;
-      font-size: 13px; cursor: pointer; font-family: inherit;
+    .login-btn:hover { opacity: 0.9; }
+    .login-error {
+      background: var(--red-light); color: var(--red);
+      border: 1px solid #fca5a5;
+      border-radius: 9px; padding: 10px 14px;
+      font-size: 13px; font-weight: 700;
+      margin-bottom: 12px; display: none;
     }
 
-    /* Stats */
-    .stats {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 10px; padding: 1rem; max-width: 900px; margin: 0 auto;
+    /* ── MAIN APP (hidden until login) ── */
+    #app { display: none; }
+
+    /* ── HEADER ── */
+    .admin-header {
+      background: linear-gradient(110deg, var(--green-dark), var(--green));
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+      box-shadow: 0 2px 12px rgba(15,107,58,0.3);
+    }
+    .admin-header-left { display: flex; align-items: center; gap: 12px; padding: 13px 0; }
+    .admin-logo { font-size: 22px; }
+    .admin-title { color: white; }
+    .admin-title strong { font-size: 16px; font-weight: 900; display: block; }
+    .admin-title span { font-size: 11px; opacity: 0.78; font-weight: 500; }
+    .admin-header-right { display: flex; align-items: center; gap: 10px; }
+    .store-link {
+      color: rgba(255,255,255,0.85); font-size: 12.5px; font-weight: 700;
+      text-decoration: none; padding: 7px 14px;
+      background: rgba(255,255,255,0.15); border-radius: var(--r-pill);
+      transition: background 0.15s;
+    }
+    .store-link:hover { background: rgba(255,255,255,0.25); }
+    .logout-link {
+      color: rgba(255,255,255,0.75); font-size: 12.5px; font-weight: 700;
+      cursor: pointer; padding: 7px 14px;
+      border-radius: var(--r-pill); transition: background 0.15s;
+      border: none; background: none; font-family: inherit;
+    }
+    .logout-link:hover { background: rgba(255,255,255,0.15); color: white; }
+
+    /* ── TAB NAV ── */
+    .tab-nav {
+      background: white;
+      border-bottom: 1.5px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+      position: sticky; top: 56px; z-index: 40;
+    }
+    .tab-nav::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      padding: 13px 20px;
+      border: none; background: none;
+      font-size: 13.5px; font-weight: 700;
+      color: var(--muted); cursor: pointer;
+      font-family: inherit; white-space: nowrap;
+      border-bottom: 3px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .tab-btn:hover { color: var(--green); }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+    .tab-count {
+      background: var(--green-light); color: var(--green);
+      font-size: 11px; font-weight: 900;
+      padding: 2px 7px; border-radius: 100px;
+    }
+    .tab-btn.active .tab-count { background: var(--green); color: white; }
+
+    /* ── MAIN CONTENT ── */
+    .admin-main { max-width: 1200px; margin: 0 auto; padding: 20px 20px 48px; }
+
+    /* ── PANELS ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
     }
     .stat-card {
-      background: white; border-radius: 12px;
-      padding: 1rem; border: 1px solid #e8e8e8;
+      background: white;
+      border-radius: var(--r);
+      padding: 18px 20px;
+      border: 1.5px solid var(--border);
+      box-shadow: var(--shadow);
     }
-    .stat-label { font-size: 12px; color: #777; }
-    .stat-value { font-size: 24px; font-weight: 600; color: #3B6D11; margin-top: 4px; }
+    .stat-label { font-size: 11.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 900; color: var(--text); line-height: 1; letter-spacing: -0.02em; }
+    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 5px; font-weight: 500; }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.amber .stat-value { color: var(--amber); }
+    .stat-card.red .stat-value { color: var(--red); }
+    .stat-card.blue .stat-value { color: var(--blue); }
 
-    /* Orders */
-    .orders-section { padding: 0 1rem 2rem; max-width: 900px; margin: 0 auto; }
-    .orders-header {
+    /* ── SECTION HEADER ── */
+    .section-hdr {
       display: flex; align-items: center; justify-content: space-between;
-      margin: 1rem 0 0.75rem; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
     }
-    .orders-header h2 { font-size: 16px; font-weight: 500; }
-    .refresh-btn {
-      background: #EAF3DE; color: #3B6D11; border: 1px solid #C0DD97;
-      padding: 5px 14px; border-radius: 8px; font-size: 13px;
-      cursor: pointer; font-family: inherit;
+    .section-hdr h2 { font-size: 17px; font-weight: 900; }
+    .section-hdr-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .filter-select, .filter-input {
+      padding: 9px 14px;
+      border: 2px solid var(--border); border-radius: var(--r-sm);
+      font-size: 13.5px; font-family: inherit; font-weight: 600;
+      color: var(--text); background: white;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+    .filter-select:focus, .filter-input:focus { outline: none; border-color: var(--green); }
+    .filter-input { flex: 1; min-width: 180px; }
+
+    /* ── ORDERS TABLE ── */
+    .orders-table-wrap { background: white; border-radius: var(--r); border: 1.5px solid var(--border); overflow: hidden; box-shadow: var(--shadow); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    thead th {
+      background: var(--green-pale);
+      padding: 11px 14px;
+      text-align: left; font-size: 11.5px; font-weight: 800;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1.5px solid var(--border); white-space: nowrap;
+    }
+    tbody td {
+      padding: 13px 14px; font-size: 13.5px; font-weight: 600;
+      border-bottom: 1px solid var(--green-pale);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--green-pale); }
+
+    /* ── STATUS BADGES ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 11px; border-radius: 100px;
+      font-size: 11.5px; font-weight: 800; white-space: nowrap;
+    }
+    .badge-pending    { background: #fef3c7; color: #92400e; }
+    .badge-confirmed  { background: #dbeafe; color: #1d4ed8; }
+    .badge-dispatched { background: var(--purple-light); color: var(--purple); }
+    .badge-delivered  { background: var(--green-light); color: #065f46; }
+    .badge-cancelled  { background: var(--red-light); color: var(--red); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 8px 16px; border-radius: var(--r-sm);
+      font-size: 13px; font-weight: 800; cursor: pointer;
+      font-family: inherit; border: none; transition: all 0.15s;
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .btn-green { background: var(--green); color: white; }
+    .btn-green:hover { background: var(--green-mid); }
+    .btn-outline { background: white; color: var(--text); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--green); color: var(--green); }
+    .btn-red { background: var(--red-light); color: var(--red); border: 1.5px solid #fca5a5; }
+    .btn-red:hover { background: var(--red); color: white; }
+    .btn-sm { padding: 6px 11px; font-size: 12px; }
+
+    /* ── STATUS DROPDOWN in table ── */
+    .status-select {
+      padding: 5px 10px; border-radius: 8px;
+      border: 1.5px solid var(--border); font-size: 12.5px;
+      font-family: inherit; font-weight: 700; cursor: pointer;
+      background: white; color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .status-select:focus { outline: none; border-color: var(--green); }
+
+    /* ── ORDER EXPAND ROW ── */
+    .order-items-row { display: none; background: var(--green-pale); }
+    .order-items-row.open { display: table-row; }
+    .order-items-cell { padding: 12px 16px; }
+    .order-items-list { display: flex; flex-wrap: wrap; gap: 7px; }
+    .order-item-chip {
+      background: white; border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 5px 11px;
+      font-size: 12.5px; font-weight: 700; color: var(--text);
+    }
+    .order-address { font-size: 12.5px; color: var(--muted); margin-top: 8px; font-weight: 500; }
+
+    /* ── MEDICINES GRID ── */
+    .medicines-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .medicine-card {
+      background: white; border-radius: var(--r);
+      border: 1.5px solid var(--border); padding: 16px;
+      box-shadow: var(--shadow); position: relative;
+    }
+    .medicine-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .med-icon-box {
+      width: 46px; height: 46px; background: var(--green-light);
+      border-radius: 11px; display: flex; align-items: center;
+      justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .med-card-name { font-size: 14.5px; font-weight: 900; color: var(--text); line-height: 1.3; }
+    .med-card-brand { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .med-card-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .med-field label { font-size: 11px; color: var(--muted); font-weight: 800; display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .med-field input {
+      width: 100%; padding: 8px 11px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-family: inherit; font-weight: 700;
+      color: var(--text); background: var(--bg);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .med-field input:focus { outline: none; border-color: var(--green); background: white; }
+    .med-card-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .stock-low { color: var(--red); font-weight: 900; }
+    .stock-ok  { color: var(--green); }
+
+    /* ── ADD MEDICINE FORM ── */
+    .add-med-card {
+      background: white; border-radius: var(--r);
+      border: 2px dashed var(--border); padding: 20px;
+      margin-bottom: 20px;
+    }
+    .add-med-card h3 { font-size: 16px; font-weight: 900; margin-bottom: 16px; color: var(--text); }
+    .add-med-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .form-field label { font-size: 11.5px; color: var(--muted); font-weight: 800; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .form-field input, .form-field select, .form-field textarea {
+      width: 100%; padding: 10px 13px;
+      border: 2px solid var(--border); border-radius: var(--r-sm);
+      font-size: 14px; font-family: inherit; font-weight: 600;
+      color: var(--text); background: white;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+    }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+      outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(15,107,58,0.1);
     }
 
-    .order-card {
-      background: white; border: 1px solid #e8e8e8;
-      border-radius: 12px; padding: 1rem; margin-bottom: 10px;
+    /* ── CUSTOMERS TABLE ── */
+    .cust-avatar {
+      width: 36px; height: 36px; background: var(--green-light);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
     }
-    .order-card.delivered { border-color: #C0DD97; background: #f9fdf4; }
-    .order-top {
-      display: flex; justify-content: space-between;
-      align-items: flex-start; margin-bottom: 8px;
-    }
-    .order-id { font-size: 12px; color: #777; }
-    .order-name { font-size: 15px; font-weight: 500; margin-top: 2px; }
-    .order-phone { font-size: 13px; color: #555; margin-top: 2px; }
-    .order-time { font-size: 12px; color: #777; text-align: right; }
-    .order-status {
-      font-size: 11px; padding: 3px 8px; border-radius: 20px;
-      font-weight: 500; margin-top: 4px; display: inline-block;
-    }
-    .status-pending { background: #FAEEDA; color: #633806; }
-    .status-delivered { background: #EAF3DE; color: #27500A; }
-    .order-items {
-      background: #f9f9f7; border-radius: 8px;
-      padding: 8px 10px; margin: 8px 0; font-size: 13px;
-    }
-    .order-item-row { padding: 3px 0; color: #444; }
-    .order-address { font-size: 13px; color: #555; margin: 6px 0; }
-    .order-bottom {
-      display: flex; align-items: center;
-      justify-content: space-between; margin-top: 10px; gap: 8px; flex-wrap: wrap;
-    }
-    .order-total { font-size: 16px; font-weight: 600; color: #3B6D11; }
-    .deliver-btn {
-      background: #3B6D11; color: white; border: none;
-      padding: 7px 16px; border-radius: 8px; font-size: 13px;
-      cursor: pointer; font-family: inherit;
-    }
-    .deliver-btn:disabled { background: #C0DD97; color: #27500A; cursor: default; }
-    .rx-img-btn {
-      background: #FAEEDA; color: #633806; border: 1px solid #FAC775;
-      padding: 7px 14px; border-radius: 8px; font-size: 13px;
-      cursor: pointer; font-family: inherit;
-    }
-    .no-orders { text-align: center; color: #888; padding: 3rem; font-size: 14px; }
-    .auto-refresh { font-size: 12px; color: #777; text-align: center; padding: 0.5rem; }
+    .cust-info { display: flex; align-items: center; gap: 10px; }
 
-    /* Medicines Manager */
-    .form-label { font-size: 12px; color: #555; display: block; margin-bottom: 4px; }
-    .form-input {
-      width: 100%; padding: 0.5rem 0.75rem; border-radius: 8px;
-      border: 1px solid #ddd; font-size: 14px; font-family: inherit; background: white;
+    /* ── RECENT ORDERS FEED ── */
+    .feed { display: flex; flex-direction: column; gap: 10px; }
+    .feed-item {
+      background: white; border-radius: var(--r);
+      border: 1.5px solid var(--border); padding: 14px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: var(--shadow);
     }
-    .med-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 0; border-bottom: 1px solid #eee; gap: 8px; flex-wrap: wrap;
+    .feed-num {
+      width: 42px; height: 42px; background: var(--green-light);
+      border-radius: 11px; display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 900; color: var(--green); flex-shrink: 0;
     }
-    .med-name { font-size: 14px; font-weight: 500; flex: 1; min-width: 120px; }
-    .med-brand { font-size: 12px; color: #777; }
-    .med-controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    .med-input {
-      width: 70px; padding: 4px 8px; border-radius: 6px;
-      border: 1px solid #ddd; font-size: 13px; font-family: inherit;
+    .feed-info { flex: 1; min-width: 0; }
+    .feed-name { font-size: 14px; font-weight: 800; color: var(--text); }
+    .feed-meta { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+    .feed-right { text-align: right; flex-shrink: 0; }
+    .feed-price { font-size: 16px; font-weight: 900; color: var(--green); }
+    .feed-time { font-size: 11.5px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+
+    /* ── PAGINATION ── */
+    .pagination { display: flex; gap: 6px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+    .page-btn {
+      padding: 8px 14px; border-radius: 9px;
+      border: 1.5px solid var(--border); background: white;
+      font-size: 13px; font-weight: 800; cursor: pointer;
+      font-family: inherit; transition: all 0.15s; color: var(--text);
     }
-    .update-btn {
-      background: #EAF3DE; color: #3B6D11; border: 1px solid #C0DD97;
-      padding: 4px 10px; border-radius: 6px; font-size: 12px;
-      cursor: pointer; font-family: inherit;
+    .page-btn:hover { border-color: var(--green); color: var(--green); }
+    .page-btn.active { background: var(--green); color: white; border-color: var(--green); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--text); color: white;
+      padding: 12px 22px; border-radius: 11px;
+      font-size: 14px; font-weight: 700;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+      z-index: 999; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+      white-space: nowrap;
     }
-    .delete-btn {
-      background: #FCEBEB; color: #A32D2D; border: 1px solid #F7C1C1;
-      padding: 4px 10px; border-radius: 6px; font-size: 12px;
-      cursor: pointer; font-family: inherit;
+    .toast.show { opacity: 1; }
+    .toast.success { background: var(--green); }
+    .toast.error { background: var(--red); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center; padding: 56px 20px;
+      color: var(--muted);
+    }
+    .empty-state .ei { font-size: 48px; margin-bottom: 14px; }
+    .empty-state h3 { font-size: 17px; font-weight: 900; color: var(--text); margin-bottom: 6px; }
+    .empty-state p { font-size: 14px; font-weight: 500; }
+
+    /* ── LOW STOCK BADGE ── */
+    .low-stock-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--red-light); color: var(--red);
+      border: 1px solid #fca5a5; border-radius: 100px;
+      font-size: 11px; font-weight: 800; padding: 2px 8px;
     }
 
-    /* Prescription Modal */
-    .modal-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.6); z-index: 100;
-      align-items: center; justify-content: center;
+    /* ── MOBILE ── */
+    @media (max-width: 700px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .admin-main { padding: 14px 14px 40px; }
+      .medicines-grid { grid-template-columns: 1fr; }
+      .tab-btn { padding: 12px 14px; font-size: 12.5px; }
     }
-    .modal-overlay.open { display: flex; }
-    .modal {
-      background: white; border-radius: 16px;
-      width: min(500px, 94vw); max-height: 85vh;
-      overflow-y: auto; padding: 1.5rem;
+    @media (max-width: 420px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .stat-value { font-size: 22px; }
     }
-    .modal h2 { font-size: 18px; margin-bottom: 1rem; }
-    .modal-close {
-      float: right; background: none; border: none;
-      font-size: 22px; cursor: pointer; color: #888;
-    }
-    .rx-image { width: 100%; border-radius: 8px; margin-top: 1rem; }
-
-
-    /* Click feedback for all buttons */
-button {
-  transition: transform 0.1s ease, opacity 0.1s ease, background 0.15s ease;
-}
-button:active {
-  transform: scale(0.96);
-  opacity: 0.85;
-}
-
-/* Stronger feedback specifically for action buttons */
-.deliver-btn:active,
-.update-btn:active,
-.delete-btn:active,
-.refresh-btn:active,
-.rx-img-btn:active,
-.logout-btn:active {
-  transform: scale(0.94);
-}
-
-/* Visual "selected/clicked" state that stays briefly */
-.btn-clicked {
-  animation: clickPulse 0.3s ease;
-}
-@keyframes clickPulse {
-  0%   { background-color: #3B6D11; color: white; }
-  100% { background-color: inherit; color: inherit; }
-}
-.low-stock-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 0.5px solid #F7C1C1;
-  font-size: 13px;
-}
-.low-stock-item:last-child { border-bottom: none; }
-.stock-number {
-  font-weight: 500;
-  padding: 2px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-}
-.stock-zero { background: #FCEBEB; color: #A32D2D; }
-.stock-low { background: #FAEEDA; color: #633806; }
-
-/* ── Admin Mobile Fixes ── */
-@media (max-width: 600px) {
-
-  /* Header */
-  header { padding: 0.75rem 1rem; }
-  header h1 { font-size: 15px; }
-  header p { font-size: 11px; }
-  .logout-btn { padding: 5px 10px; font-size: 12px; }
-
-  /* Stats */
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 0.75rem;
-    gap: 8px;
-  }
-  .stat-card { padding: 0.75rem; }
-  .stat-value { font-size: 20px; }
-  .stat-label { font-size: 11px; }
-
-  /* Orders section */
-  .orders-section { padding: 0 0.75rem 2rem; }
-  .orders-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .orders-header h2 { font-size: 14px; }
-  .orders-header div { width: 100%; }
-  .refresh-btn { font-size: 12px; padding: 4px 10px; }
-
-  /* Date filter row — stack on mobile */
-  .orders-header > div {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    width: 100%;
-  }
-  .orders-header input[type="date"] {
-    width: 100%;
-    font-size: 13px;
-  }
-
-  /* Order cards */
-  .order-card { padding: 0.75rem; }
-  .order-name { font-size: 14px; }
-  .order-phone { font-size: 12px; }
-  .order-time { font-size: 11px; }
-  .order-id { font-size: 11px; }
-  .order-total { font-size: 14px; }
-  .order-items { font-size: 12px; }
-  .order-item-row { padding: 2px 0; }
-  .order-address { font-size: 12px; }
-  .order-bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .deliver-btn { width: 100%; text-align: center; padding: 8px; }
-  .rx-img-btn { width: 100%; text-align: center; padding: 8px; }
-
-  /* Progress bar */
-  .order-top { flex-direction: column; gap: 6px; }
-  .order-status { font-size: 10px; }
-
-  /* Low stock panel */
-  #lowStockPanel { margin: 0.75rem; }
-  .low-stock-item { flex-wrap: wrap; gap: 6px; }
-
-  /* Medicines manager */
-  .med-row { flex-direction: column; align-items: flex-start; }
-  .med-controls { width: 100%; justify-content: flex-end; }
-  .med-input { width: 60px; }
-
-  /* Add medicine form */
-  .order-card div[style*="grid-template-columns"] {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Login box */
-  .login-box { padding: 1.5rem; }
-  .login-box h1 { font-size: 18px; }
-
-  /* Settings modal */
-  .modal { width: 95vw; padding: 1.25rem; }
-}
-
   </style>
 </head>
 <body>
 
-  <!-- LOGIN -->
-  <div class="login-screen" id="loginScreen">
-    <div class="login-box">
-      <div style="font-size:40px;margin-bottom:0.75rem">🏥</div>
-      <h1>Admin Login</h1>
-      <p>Sitaram Medical Store</p>
-      <input type="email" id="emailInput" placeholder="Email address"
-        onkeydown="if(event.key==='Enter') login()">
-      <input type="password" id="passwordInput" placeholder="Password"
-        onkeydown="if(event.key==='Enter') login()">
-      <button onclick="login()">Login</button>
-      <div class="login-error" id="loginError"></div>
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-icon">🔐</div>
+    <h1>Admin Login</h1>
+    <p>Sitaram Medical Store — Staff Only</p>
+    <div class="login-error" id="loginError">Wrong password. Try again.</div>
+    <input type="password" id="adminKeyInput" placeholder="Enter admin password"
+      onkeypress="if(event.key==='Enter')adminLogin()">
+    <button class="login-btn" onclick="adminLogin()">Login →</button>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="app">
+
+  <!-- Header -->
+  <div class="admin-header">
+    <div class="admin-header-left">
+      <div class="admin-logo">💊</div>
+      <div class="admin-title">
+        <strong>Sitaram Admin</strong>
+        <span>Medical Store Management</span>
+      </div>
+    </div>
+    <div class="admin-header-right">
+      <a class="store-link" href="/" target="_blank">🛒 View Store</a>
+      <button class="logout-link" onclick="adminLogout()">Logout</button>
     </div>
   </div>
 
-  <!-- DASHBOARD -->
-  <div class="dashboard" id="dashboard">
-    <header>
-      <div>
-        <h1>🏥 Admin Dashboard</h1>
-<p id="adminName">Sitaram Medical Store</p>
-      </div>
-      <div style="display:flex;gap:8px">
-  <button class="logout-btn" onclick="openSettings()">⚙️ Settings</button>
-  <button class="logout-btn" onclick="logout()">Logout</button>
-</div>
-    </header>
-    <!-- Low Stock Alert Panel -->
-<div id="lowStockPanel" style="display:none;margin:1rem;border-radius:12px;overflow:hidden;border:1px solid #F7C1C1">
-  <div style="background:#FCEBEB;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:18px">⚠️</span>
-      <span style="font-size:14px;font-weight:500;color:#A32D2D">Low Stock Alert</span>
-      <span id="lowStockCount" style="background:#A32D2D;color:white;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500">0</span>
-    </div>
-    <span style="font-size:12px;color:#A32D2D">Medicines running low — restock soon</span>
-  </div>
-  <div id="lowStockList" style="background:white;padding:0.5rem 1rem"></div>
-</div>
-
-    <div class="stats">
-      <div class="stat-card">
-        <div class="stat-label">Total Orders</div>
-        <div class="stat-value" id="statTotal">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Pending</div>
-        <div class="stat-value" id="statPending" style="color:#BA7517">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Delivered</div>
-        <div class="stat-value" id="statDelivered">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Today's Revenue</div>
-        <div class="stat-value" id="statRevenue">₹0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Revenue</div>
-        <div class="stat-value" id="statTotalRevenue">₹0</div>
-      </div>
-    </div>
-
-    <div class="orders-section">
-      <div class="orders-header">
-  <h2>All Orders (newest first)</h2>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <input type="date" id="dateFilter" onchange="applyDateFilter()"
-      style="padding:5px 10px;border-radius:8px;border:1px solid #ddd;font-family:inherit;font-size:13px;">
-    <button class="refresh-btn" onclick="clearDateFilter()">Show All</button>
-    <button class="refresh-btn" onclick="loadOrders()">↻ Refresh</button>
-    <button class="refresh-btn" onclick="exportCSV()"
-      style="background:#EAF3DE;color:#3B6D11;border-color:#C0DD97">
-      ⬇ Download CSV
+  <!-- Tab Nav -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showTab('dashboard')" id="tab-dashboard">
+      📊 Dashboard
+    </button>
+    <button class="tab-btn" onclick="showTab('orders')" id="tab-orders">
+      📦 Orders <span class="tab-count" id="pendingCount">0</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('medicines')" id="tab-medicines">
+      💊 Medicines
+    </button>
+    <button class="tab-btn" onclick="showTab('customers')" id="tab-customers">
+      👥 Customers
     </button>
   </div>
-</div>
-      <div id="ordersList"></div>
-      <div class="auto-refresh" id="refreshTimer"></div>
-    </div>
 
-    <!-- Medicines Manager -->
-    <div class="orders-section" style="margin-top:2rem">
-      <div class="orders-header">
-  <h2>Medicines Manager</h2>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <input type="text" id="medSearchInput" placeholder="🔍 Search medicines..."
-      onkeyup="filterMedicinesList()"
-      style="padding:6px 12px;border-radius:8px;border:1px solid #ddd;font-family:inherit;font-size:13px;min-width:200px">
-    <button class="refresh-btn" onclick="loadMedicines()">↻ Refresh</button>
-  </div>
-</div>
-<div id="medCountLabel" style="font-size:13px;color:#777;margin-bottom:10px"></div>
+  <!-- Main -->
+  <div class="admin-main">
 
-      <div class="order-card" style="margin-bottom:1rem">
-        <div style="font-size:15px;font-weight:500;margin-bottom:1rem">➕ Add New Medicine</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>
-            <label class="form-label">Medicine Name *</label>
-            <input type="text" id="newName" placeholder="e.g. Dolo 650mg" class="form-input">
-          </div>
-          <div>
-            <label class="form-label">Brand</label>
-            <input type="text" id="newBrand" placeholder="e.g. Micro Labs" class="form-input">
-          </div>
-          <div>
-            <label class="form-label">Price (₹) *</label>
-            <input type="number" id="newPrice" placeholder="e.g. 30" class="form-input">
-          </div>
-          <div>
-            <label class="form-label">Stock *</label>
-            <input type="number" id="newStock" placeholder="e.g. 100" class="form-input">
-          </div>
-          <div>
-            <label class="form-label">Category *</label>
-            <select id="newCategory" class="form-input">
-              <option value="fever">Fever & Cold</option>
-              <option value="vitamins">Vitamins</option>
-              <option value="pain">Pain Relief</option>
-              <option value="stomach">Stomach</option>
-              <option value="diabetes">Diabetes</option>
-              <option value="skincare">Skin Care</option>
-              <option value="antibiotics">Antibiotics</option>
-              <option value="heart">Heart & BP</option>
-              <option value="respiratory">Respiratory</option>
-              <option value="eye">Eye Care</option>
-              <option value="general">General</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Icon (emoji)</label>
-            <input type="text" id="newIcon" placeholder="💊" class="form-input">
-          </div>
+    <!-- ════ DASHBOARD PANEL ════ -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card green">
+          <div class="stat-label">Today's Revenue</div>
+          <div class="stat-value" id="statToday">₹—</div>
+          <div class="stat-sub">Orders placed today</div>
         </div>
-        <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
-          <input type="checkbox" id="newRx">
-          <label for="newRx" style="font-size:13px">Requires Prescription (Rx)</label>
-          <input type="checkbox" id="newFeatured" style="margin-left:16px">
-          <label for="newFeatured" style="font-size:13px">⭐ Show on Home Page</label>
+        <div class="stat-card blue">
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-value" id="statOrders">—</div>
+          <div class="stat-sub" id="statPendingText">— pending</div>
         </div>
-        <button class="deliver-btn" style="margin-top:1rem;width:100%;padding:0.75rem"
-          onclick="addMedicine()">Add Medicine</button>
+        <div class="stat-card amber">
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-value" id="statCustomers">—</div>
+          <div class="stat-sub">Registered accounts</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Low Stock Items</div>
+          <div class="stat-value" id="statLowStock">—</div>
+          <div class="stat-sub">Need restocking (≤5)</div>
+        </div>
       </div>
 
-      <div id="medicinesList"></div>
-    </div>
-  </div>
-  <!-- Settings Modal -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeSettings()">✕</button>
-    <h2>⚙️ Account Settings</h2>
-
-    <div style="margin-top:1rem">
-      <div style="font-size:14px;font-weight:500;margin-bottom:10px">Change Password</div>
-      <input type="password" id="currentPassword" placeholder="Current password" class="form-input" style="margin-bottom:8px">
-      <input type="password" id="newPassword" placeholder="New password (min 6 characters)" class="form-input" style="margin-bottom:8px">
-      <button class="deliver-btn" style="width:100%" onclick="changePassword()">Update Password</button>
-      <div id="passwordMsg" style="font-size:13px;margin-top:8px"></div>
+      <div class="section-hdr">
+        <h2>🕐 Recent Orders</h2>
+        <button class="btn btn-outline btn-sm" onclick="showTab('orders')">View All →</button>
+      </div>
+      <div class="feed" id="recentFeed">
+        <div class="empty-state"><div class="ei">⏳</div><p>Loading...</p></div>
+      </div>
     </div>
 
-    <hr style="margin:1.5rem 0;border:none;border-top:1px solid #eee">
-
-    <div>
-      <div style="font-size:14px;font-weight:500;margin-bottom:10px">Change Email</div>
-      <input type="email" id="newEmail" placeholder="New email address" class="form-input" style="margin-bottom:8px">
-      <input type="password" id="emailPassword" placeholder="Confirm your password" class="form-input" style="margin-bottom:8px">
-      <button class="deliver-btn" style="width:100%" onclick="changeEmail()">Update Email</button>
-      <div id="emailMsg" style="font-size:13px;margin-top:8px"></div>
+    <!-- ════ ORDERS PANEL ════ -->
+    <div class="panel" id="panel-orders">
+      <div class="section-hdr">
+        <h2>📦 Orders</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadOrders()">🔄 Refresh</button>
+      </div>
+      <div class="filter-bar">
+        <select class="filter-select" id="orderStatusFilter" onchange="loadOrders()">
+          <option value="all">All Orders</option>
+          <option value="pending">🟡 Pending</option>
+          <option value="confirmed">🔵 Confirmed</option>
+          <option value="dispatched">🟣 Dispatched</option>
+          <option value="delivered">🟢 Delivered</option>
+          <option value="cancelled">🔴 Cancelled</option>
+        </select>
+      </div>
+      <div class="orders-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <tr><td colspan="8" style="text-align:center;padding:32px;color:#6b7c72">Loading orders...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="ordersPagination"></div>
     </div>
-  </div>
-</div>
 
-  <!-- Prescription Modal -->
-  <div class="modal-overlay" id="rxModal">
-    <div class="modal">
-      <button class="modal-close" onclick="closeRxModal()">✕</button>
-      <h2>📋 Prescription</h2>
-      <div id="rxContent"></div>
+    <!-- ════ MEDICINES PANEL ════ -->
+    <div class="panel" id="panel-medicines">
+      <!-- Add new medicine -->
+      <div class="add-med-card" id="addMedForm" style="display:none">
+        <h3>➕ Add New Medicine</h3>
+        <div class="add-med-grid">
+          <div class="form-field">
+            <label>Medicine Name *</label>
+            <input type="text" id="newName" placeholder="e.g. Paracetamol 500mg">
+          </div>
+          <div class="form-field">
+            <label>Brand</label>
+            <input type="text" id="newBrand" placeholder="e.g. Cipla">
+          </div>
+          <div class="form-field">
+            <label>Price (₹) *</label>
+            <input type="number" id="newPrice" placeholder="0.00" step="0.01">
+          </div>
+          <div class="form-field">
+            <label>Stock (units)</label>
+            <input type="number" id="newStock" placeholder="0">
+          </div>
+          <div class="form-field">
+            <label>Category</label>
+            <input type="text" id="newCategory" placeholder="e.g. Tablets">
+          </div>
+          <div class="form-field">
+            <label>Icon (emoji)</label>
+            <input type="text" id="newIcon" placeholder="💊" maxlength="4">
+          </div>
+        </div>
+        <div class="form-field" style="margin-bottom:12px">
+          <label>Uses / Description</label>
+          <input type="text" id="newUses" placeholder="e.g. Fever, headache, pain relief">
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <input type="checkbox" id="newRx" style="width:16px;height:16px;accent-color:var(--green)">
+          <label for="newRx" style="font-size:13.5px;font-weight:700;color:var(--text);cursor:pointer">Requires Prescription (Rx)</label>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-green" onclick="addMedicine()">✅ Add Medicine</button>
+          <button class="btn btn-outline" onclick="document.getElementById('addMedForm').style.display='none'">Cancel</button>
+        </div>
+      </div>
+
+      <div class="section-hdr">
+        <h2>💊 Medicine Inventory</h2>
+        <div class="section-hdr-right">
+          <button class="btn btn-outline btn-sm" id="lowStockToggle" onclick="toggleLowStock()">⚠️ Low Stock Only</button>
+          <button class="btn btn-green btn-sm" onclick="document.getElementById('addMedForm').style.display=document.getElementById('addMedForm').style.display==='none'?'block':'none'">➕ Add Medicine</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <input type="text" class="filter-input" id="medSearch" placeholder="🔍 Search by name or brand..."
+          oninput="clearTimeout(window._ms);window._ms=setTimeout(loadMedicines,300)">
+      </div>
+      <div class="medicines-grid" id="medicinesGrid">
+        <div class="empty-state"><div class="ei">⏳</div><p>Loading medicines...</p></div>
+      </div>
+      <div class="pagination" id="medPagination"></div>
     </div>
-  </div>
+
+    <!-- ════ CUSTOMERS PANEL ════ -->
+    <div class="panel" id="panel-customers">
+      <div class="section-hdr">
+        <h2>👥 Customers</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadCustomers()">🔄 Refresh</button>
+      </div>
+      <div class="orders-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Orders</th>
+              <th>Total Spent</th>
+              <th>Joined</th>
+            </tr>
+          </thead>
+          <tbody id="customersBody">
+            <tr><td colspan="6" style="text-align:center;padding:32px;color:#6b7c72">Loading customers...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /admin-main -->
+</div><!-- /app -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script>
-  let token = localStorage.getItem('adminToken');
-  let allOrders = [];
-  let allMedsList = [];
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let ADMIN_KEY = '';
+let ordersPage = 1;
+let medsPage = 1;
+let showLowStock = false;
 
-  // ── Auth ──
-  async function login() {
-    const email    = document.getElementById('emailInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
-    const errorEl  = document.getElementById('loginError');
-    errorEl.textContent = '';
-
-    if (!email || !password) {
-      errorEl.textContent = 'Please enter email and password.';
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        errorEl.textContent = data.error || 'Login failed.';
-        return;
-      }
-
-      token = data.token;
-      localStorage.setItem('adminToken', token);
-      document.getElementById('adminName').textContent =
-        `Welcome, ${data.name} · Hare Krishna Medical Store`;
-      showDashboard();
-
-    } catch (err) {
-      errorEl.textContent = 'Cannot connect to server.';
-    }
-  }
-
-  function logout() {
-    localStorage.removeItem('adminToken');
-    token = null;
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('dashboard').style.display = 'none';
-    document.getElementById('emailInput').value = '';
-    document.getElementById('passwordInput').value = '';
-  }
-
-function showDashboard() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('dateFilter').value = today;
-
-  loadOrders();
-  loadMedicines();
-  loadLowStock();
-  startAutoRefresh();
+// ══════════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════════
+function adminLogin() {
+  const key = document.getElementById('adminKeyInput').value.trim();
+  if (!key) return;
+  ADMIN_KEY = key;
+  // Test with a real API call
+  apiFetch('/api/admin/stats')
+    .then(() => {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      sessionStorage.setItem('adminKey', key);
+      initDashboard();
+    })
+    .catch(() => {
+      ADMIN_KEY = '';
+      const err = document.getElementById('loginError');
+      err.style.display = 'block';
+      err.textContent = 'Wrong password. Please try again.';
+    });
+}
+function adminLogout() {
+  ADMIN_KEY = '';
+  sessionStorage.removeItem('adminKey');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminKeyInput').value = '';
+}
+// Auto-restore session
+const savedKey = sessionStorage.getItem('adminKey');
+if (savedKey) {
+  ADMIN_KEY = savedKey;
+  apiFetch('/api/admin/stats')
+    .then(() => {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      initDashboard();
+    })
+    .catch(() => { ADMIN_KEY = ''; sessionStorage.removeItem('adminKey'); });
 }
 
-  // Helper — adds token to every API request
-  function authHeaders() {
-    return {
+// ══════════════════════════════════════
+//  API HELPER
+// ══════════════════════════════════════
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-  }
-
-  // Check if already logged in on page load
-  window.onload = function() {
-    if (token) {
-      showDashboard();
-    }
-  };
-
-  // ── Orders ──
-async function loadOrders() {
-  try {
-    const res = await fetch('/api/orders', { headers: authHeaders() });
-    if (res.status === 401 || res.status === 403) { logout(); return; }
-    allOrders = await res.json();
-
-    // Keep date filter applied if one is selected
-    const dateInput = document.getElementById('dateFilter');
-    if (dateInput.value) {
-      applyDateFilter();
-    } else {
-      renderOrders(allOrders);
-      updateStats(allOrders);
-    }
-  } catch (err) {
-    document.getElementById('ordersList').innerHTML =
-      '<p style="color:red;padding:1rem">Failed to load orders.</p>';
-  }
-}
-
-  function renderOrders(orders) {
-  const list = document.getElementById('ordersList');
-  if (!orders.length) {
-    list.innerHTML = '<div class="no-orders">📭 No orders yet.</div>';
-    return;
-  }
-  list.innerHTML = orders.map(order => {
-    const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
-    const time = new Date(order.created_at).toLocaleString('en-IN', {
-      day: '2-digit', month: 'short',
-      hour: '2-digit', minute: '2-digit', hour12: true
-    });
-
-    const statusConfig = {
-      pending:   { label: '⏳ Pending',   color: '#633806', bg: '#FAEEDA' },
-      confirmed: { label: '✓ Confirmed',  color: '#0C447C', bg: '#E6F1FB' },
-      dispatched:{ label: '🚚 Dispatched', color: '#534AB7', bg: '#EEEDFE' },
-      delivered: { label: '✓ Delivered',  color: '#27500A', bg: '#EAF3DE' },
-    };
-
-    const sc = statusConfig[order.status] || statusConfig.pending;
-
-    // Rx badge
-    const rxBadge = order.prescription_status === 'pending_approval'
-      ? `<span style="background:#FAEEDA;color:#633806;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;margin-left:6px">⚠️ Rx Pending</span>`
-      : order.prescription_status === 'approved'
-      ? `<span style="background:#EAF3DE;color:#27500A;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;margin-left:6px">✓ Rx Approved</span>`
-      : order.prescription_status === 'rejected'
-      ? `<span style="background:#FCEBEB;color:#A32D2D;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;margin-left:6px">✗ Rx Rejected</span>`
-      : '';
-
-    // Status progress bar
-    const steps = ['pending', 'confirmed', 'dispatched', 'delivered'];
-    const currentStep = steps.indexOf(order.status);
-    const progressBar = `
-      <div style="display:flex;align-items:center;gap:4px;margin:10px 0">
-        ${steps.map((step, i) => `
-          <div style="flex:1;text-align:center">
-            <div style="width:24px;height:24px;border-radius:50%;margin:0 auto;
-              background:${i <= currentStep ? '#3B6D11' : '#e8e8e8'};
-              display:flex;align-items:center;justify-content:center;
-              font-size:11px;color:${i <= currentStep ? 'white' : '#888'}">
-              ${i <= currentStep ? '✓' : i + 1}
-            </div>
-            <div style="font-size:10px;color:${i <= currentStep ? '#3B6D11' : '#888'};margin-top:3px;text-transform:capitalize">
-              ${step}
-            </div>
-          </div>
-          ${i < steps.length - 1 ? `
-            <div style="flex:2;height:2px;background:${i < currentStep ? '#3B6D11' : '#e8e8e8'};margin-bottom:16px"></div>
-          ` : ''}
-        `).join('')}
-      </div>`;
-
-    // Next status button
-    const nextStatus = steps[currentStep + 1];
-    const nextLabels = {
-      confirmed: '✓ Confirm Order',
-      dispatched: '🚚 Mark Dispatched',
-      delivered: '✓ Mark Delivered'
-    };
-
-    return `
-      <div class="order-card ${order.status === 'delivered' ? 'delivered' : ''}">
-        <div class="order-top">
-          <div>
-            <div class="order-id">Order #${order.id}</div>
-            <div class="order-name">${order.customer_name} ${rxBadge}</div>
-            <div class="order-phone">📞 ${order.phone}</div>
-          </div>
-          <div>
-            <div class="order-time">${time}</div>
-            <span class="order-status" style="background:${sc.bg};color:${sc.color}">
-              ${sc.label}
-            </span>
-          </div>
-        </div>
-
-        ${progressBar}
-
-        <div class="order-items">
-          ${items.map(i => `
-            <div class="order-item-row">
-              💊 ${i.name} × ${i.qty} = ₹${(i.qty * i.price).toFixed(2)}
-            </div>`).join('')}
-        </div>
-
-        ${order.address ? `<div class="order-address">📍 ${order.address}</div>` : ''}
-
-        <div style="font-size:12px;margin-top:4px">
-  ${order.payment_method === 'online'
-    ? `<span style="background:#EEF2FF;color:#3730A3;padding:2px 8px;border-radius:12px;font-size:11px">💳 Paid Online</span>`
-    : `<span style="background:#F5F5F5;color:#555;padding:2px 8px;border-radius:12px;font-size:11px">🏠 Cash on Delivery</span>`
-  }
-  ${order.razorpay_payment_id
-    ? `<span style="color:#777;font-size:11px;margin-left:6px">ID: ${order.razorpay_payment_id}</span>`
-    : ''
-  }
-</div>
-
-        <div class="order-bottom">
-          <div class="order-total">Total: ₹${parseFloat(order.total).toFixed(2)}</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            ${order.prescription
-              ? `<button class="rx-img-btn" onclick="viewPrescription(${order.id})">📋 View Rx</button>`
-              : ''}
-            ${order.prescription_status === 'pending_approval' ? `
-      <button class="deliver-btn"
-        style="background:#27500A"
-        onclick="approvePrescription(${order.id})">
-        ✓ Approve Rx
-      </button>
-      <button class="deliver-btn"
-        style="background:#A32D2D"
-        onclick="rejectPrescription(${order.id})">
-        ✗ Reject Rx
-      </button>
-    ` : order.prescription_status === 'rejected' ? `
-      <button class="deliver-btn" disabled
-        style="background:#888;cursor:not-allowed">
-        ✗ Rx Rejected
-      </button>
-    ` : `
-      ${nextStatus
-        ? `<button class="deliver-btn" onclick="updateStatus(${order.id}, '${nextStatus}')">
-             ${nextLabels[nextStatus]}
-           </button>`
-        : `<button class="deliver-btn" disabled>Delivered ✓</button>`
-      }
-    `}
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-  function updateStats(orders) {
-    const today = new Date().toDateString();
-    const pending   = orders.filter(o => o.status !== 'delivered').length;
-    const delivered = orders.filter(o => o.status === 'delivered').length;
-    const todayRev  = allOrders
-      .filter(o => new Date(o.created_at).toDateString() === today)
-      .reduce((s, o) => s + parseFloat(o.total), 0);
-    const totalRev  = allOrders.reduce((s, o) => s + parseFloat(o.total), 0);
-
-    document.getElementById('statTotal').textContent = orders.length;
-    document.getElementById('statPending').textContent = pending;
-    document.getElementById('statDelivered').textContent = delivered;
-    document.getElementById('statRevenue').textContent = '₹' + todayRev.toFixed(0);
-    document.getElementById('statTotalRevenue').textContent = '₹' + totalRev.toFixed(0);
-  }
-
-  function applyDateFilter() {
-    const val = document.getElementById('dateFilter').value;
-    const selected = new Date(val).toDateString();
-    const filtered = allOrders.filter(o =>
-      new Date(o.created_at).toDateString() === selected);
-    renderOrders(filtered);
-    updateStats(filtered);
-  }
-
-  function clearDateFilter() {
-    document.getElementById('dateFilter').value = '';
-    renderOrders(allOrders);
-    updateStats(allOrders);
-    
-  }
-
-  async function markDelivered(id) {
-  await updateStatus(id, 'delivered');
-}
-
-async function updateStatus(id, status) {
-  const labels = {
-    confirmed: 'confirm this order?',
-    dispatched: 'mark this order as dispatched?',
-    delivered: 'mark this order as delivered?'
-  };
-  if (!confirm(`Are you sure you want to ${labels[status]}`)) return;
-
-  try {
-    const res = await fetch(`/api/orders/${id}/status`, {
-      method: 'PATCH',
-      headers: authHeaders(),
-      body: JSON.stringify({ status })
-    });
-    if (!res.ok) {
-      alert('Failed to update order status.');
-      return;
-    }
-    loadOrders();
-    loadLowStock();
-  } catch (err) {
-    alert('Failed to update order.');
-  }
-}
-
-  // View prescription image
-  async function viewPrescription(orderId) {
-  const order = allOrders.find(o => o.id == orderId);
-  if (!order || !order.prescription) {
-    alert('No prescription found for this order.');
-    return;
-  }
-  const isPdf = order.prescription.startsWith('data:application/pdf');
-  document.getElementById('rxContent').innerHTML = isPdf
-    ? `<p style="font-size:13px;color:#555;margin-bottom:1rem">This prescription is a PDF file.</p>
-       <a href="${order.prescription}" download="prescription.pdf"
-         style="background:#3B6D11;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:14px">
-         ⬇ Download PDF
-       </a>`
-    : `<img src="${order.prescription}" class="rx-image" alt="Prescription">
-       <div style="margin-top:8px;display:flex;gap:8px">
-         <button onclick="approvePrescription(${orderId});closeRxModal()"
-           style="flex:1;background:#27500A;color:white;border:none;padding:8px;border-radius:8px;cursor:pointer;font-size:13px">
-           ✓ Approve
-         </button>
-         <button onclick="rejectPrescription(${orderId});closeRxModal()"
-           style="flex:1;background:#A32D2D;color:white;border:none;padding:8px;border-radius:8px;cursor:pointer;font-size:13px">
-           ✗ Reject
-         </button>
-       </div>`;
-  document.getElementById('rxModal').classList.add('open');
-}
-
-  function closeRxModal() {
-    document.getElementById('rxModal').classList.remove('open');
-  }
-
-  // ── Medicines Manager ──
-async function loadMedicines() {
-  try {
-    const res = await fetch('/api/medicines');
-    allMedsList = await res.json();
-    showEmptySearchState();
-  } catch (err) {
-    document.getElementById('medicinesList').innerHTML =
-      '<p style="color:red">Failed to load medicines.</p>';
-  }
-}
-
-function showEmptySearchState() {
-  const list = document.getElementById('medicinesList');
-  const countLabel = document.getElementById('medCountLabel');
-  countLabel.textContent = `${allMedsList.length} medicines total · search to view`;
-  list.innerHTML = `
-    <div style="text-align:center;padding:2rem;color:#888">
-      <div style="font-size:32px;margin-bottom:0.5rem">🔍</div>
-      <p style="font-size:14px">Type a medicine name above to search and manage it.</p>
-    </div>`;
-}
-
-function renderMedicinesList(filtered) {
-  const list = document.getElementById('medicinesList');
-  const medsToShow = filtered || allMedsList;
-  const countLabel = document.getElementById('medCountLabel');
-
-  countLabel.textContent = `Showing ${medsToShow.length} of ${allMedsList.length} medicines`;
-
-  if (!medsToShow.length) {
-    list.innerHTML = '<p style="color:#888;font-size:14px;padding:1rem 0;">No medicines found matching your search.</p>';
-    return;
-  }
-
-  list.innerHTML = medsToShow.map(m => `
-    <div class="med-row">
-      <div style="flex:1;min-width:120px">
-        <div class="med-name">${m.icon} ${m.name}</div>
-        <div class="med-brand">${m.brand} · ${m.category}
-          ${m.featured ? ' · ⭐ Featured' : ''}
-          ${m.requires_rx ? ' · <span style="color:#A32D2D">Rx</span>' : ''}
-        </div>
-      </div>
-      <div class="med-controls">
-        <div>
-          <div style="font-size:11px;color:#777;margin-bottom:2px">Price ₹</div>
-          <input type="number" class="med-input" id="price-${m.id}" value="${m.price}">
-        </div>
-        <div>
-          <div style="font-size:11px;color:#777;margin-bottom:2px">Stock</div>
-          <input type="number" class="med-input" id="stock-${m.id}" value="${m.stock}">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;margin-top:14px">
-          <button class="update-btn" onclick="updateMedicine(${m.id})">Update</button>
-          <button class="delete-btn" onclick="deleteMedicine(${m.id}, '${m.name.replace(/'/g, "\\'")}')">Delete</button>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function filterMedicinesList() {
-  const q = document.getElementById('medSearchInput').value.trim().toLowerCase();
-
-  if (!q) {
-    showEmptySearchState();
-    return;
-  }
-
-  const filtered = allMedsList.filter(m =>
-    m.name.toLowerCase().includes(q) ||
-    (m.brand && m.brand.toLowerCase().includes(q)) ||
-    (m.category && m.category.toLowerCase().includes(q))
-  );
-
-  renderMedicinesList(filtered);
-}
-
-  async function addMedicine() {
-    const name       = document.getElementById('newName').value.trim();
-    const brand      = document.getElementById('newBrand').value.trim();
-    const price      = document.getElementById('newPrice').value;
-    const stock      = document.getElementById('newStock').value;
-    const category   = document.getElementById('newCategory').value;
-    const icon       = document.getElementById('newIcon').value.trim() || '💊';
-    const requires_rx = document.getElementById('newRx').checked;
-    const featured   = document.getElementById('newFeatured').checked;
-
-    if (!name || !price || !stock) {
-      alert('Please fill Name, Price and Stock.');
-      return;
-    }
-
-    try {
-      await fetch('/api/medicines', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ name, brand, price, stock, category, icon, requires_rx, featured })
-      });
-      document.getElementById('newName').value = '';
-      document.getElementById('newBrand').value = '';
-      document.getElementById('newPrice').value = '';
-      document.getElementById('newStock').value = '';
-      document.getElementById('newIcon').value = '';
-      document.getElementById('newRx').checked = false;
-      document.getElementById('newFeatured').checked = false;
-      alert('Medicine added!');
-      loadMedicines();
-    } catch (err) { alert('Failed to add medicine.'); }
-  }
-
-  async function updateMedicine(id) {
-    const price = document.getElementById(`price-${id}`).value;
-    const stock = document.getElementById(`stock-${id}`).value;
-    try {
-      await fetch(`/api/medicines/${id}`, {
-        method: 'PATCH',
-        headers: authHeaders(),
-        body: JSON.stringify({ price: parseFloat(price), stock: parseInt(stock) })
-      });
-      alert('Updated!');
-      loadMedicines();
-    } catch (err) { alert('Failed to update.'); }
-  }
-
-  async function deleteMedicine(id, name) {
-    if (!confirm(`Delete "${name}"?`)) return;
-    try {
-      await fetch(`/api/medicines/${id}`, {
-        method: 'DELETE', headers: authHeaders()
-      });
-      loadMedicines();
-    } catch (err) { alert('Failed to delete.'); }
-  }
-
-  // ── Auto refresh ──
-let countdown = 30;
-function startAutoRefresh() {
-  setInterval(() => {
-    const dateInput = document.getElementById('dateFilter');
-    const timerEl = document.getElementById('refreshTimer');
-    const today = new Date().toISOString().split('T')[0];
-
-    if (dateInput.value && dateInput.value !== today) {
-      // Viewing a past date — pause auto refresh
-      timerEl.textContent = `📅 Showing ${dateInput.value} · Auto-refresh paused`;
-      return;
-    }
-
-    countdown--;
-    timerEl.textContent = `Auto-refreshing in ${countdown}s`;
-    if (countdown <= 0) { countdown = 30; loadOrders(); loadLowStock(); }
-  }, 1000);
-}
-
-  document.getElementById('rxModal').addEventListener('click', function(e) {
-    if (e.target === this) closeRxModal();
+      'x-admin-key': ADMIN_KEY,
+      ...(options.headers || {})
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined
   });
-
-  document.getElementById('settingsModal').addEventListener('click', function(e) {
-  if (e.target === this) closeSettings();
-});
-
-  function openSettings() {
-  document.getElementById('settingsModal').classList.add('open');
-}
-function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
-  document.getElementById('passwordMsg').textContent = '';
-  document.getElementById('emailMsg').textContent = '';
-}
-
-async function changePassword() {
-  const currentPassword = document.getElementById('currentPassword').value;
-  const newPassword = document.getElementById('newPassword').value;
-  const msg = document.getElementById('passwordMsg');
-
-  if (!currentPassword || !newPassword) {
-    msg.style.color = '#A32D2D';
-    msg.textContent = 'Please fill both fields.';
-    return;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error || 'Request failed');
   }
+  return res.json();
+}
 
+// ══════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════
+function showTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'orders') loadOrders();
+  if (tab === 'medicines') loadMedicines();
+  if (tab === 'customers') loadCustomers();
+}
+
+// ══════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════
+function initDashboard() {
+  loadStats();
+  loadRecent();
+}
+async function loadStats() {
   try {
-    const res = await fetch('/api/auth/change-password', {
-      method: 'PATCH',
-      headers: authHeaders(),
-      body: JSON.stringify({ currentPassword, newPassword })
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      msg.style.color = '#A32D2D';
-      msg.textContent = data.error;
+    const d = await apiFetch('/api/admin/stats');
+    document.getElementById('statToday').textContent = '₹' + parseFloat(d.revenue.today_revenue).toLocaleString('en-IN');
+    document.getElementById('statOrders').textContent = d.orders.total;
+    document.getElementById('statPendingText').textContent = d.orders.pending + ' pending';
+    document.getElementById('statCustomers').textContent = d.customers.total;
+    document.getElementById('statLowStock').textContent = d.lowStock.total;
+    document.getElementById('pendingCount').textContent = d.orders.pending;
+  } catch (e) { console.error(e); }
+}
+async function loadRecent() {
+  try {
+    const orders = await apiFetch('/api/admin/recent');
+    const feed = document.getElementById('recentFeed');
+    if (!orders.length) {
+      feed.innerHTML = '<div class="empty-state"><div class="ei">📭</div><h3>No orders yet</h3><p>Orders will appear here</p></div>';
       return;
     }
-
-    msg.style.color = '#27500A';
-    msg.textContent = '✓ Password changed successfully!';
-    document.getElementById('currentPassword').value = '';
-    document.getElementById('newPassword').value = '';
-
-  } catch (err) {
-    msg.style.color = '#A32D2D';
-    msg.textContent = 'Something went wrong.';
-  }
+    feed.innerHTML = orders.map(o => {
+      const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+      const summary = items.map(i => i.name).slice(0, 2).join(', ') + (items.length > 2 ? ` +${items.length - 2}` : '');
+      const time = new Date(o.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      return `<div class="feed-item">
+        <div class="feed-num">#${o.id}</div>
+        <div class="feed-info">
+          <div class="feed-name">${o.customer_name}</div>
+          <div class="feed-meta">${summary} · ${o.phone}</div>
+        </div>
+        <div class="feed-right">
+          <div class="feed-price">₹${parseFloat(o.total).toFixed(0)}</div>
+          <div class="feed-time">${time}</div>
+          <span class="badge badge-${o.status}">${o.status}</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) { console.error(e); }
 }
 
-async function changeEmail() {
-  const newEmail = document.getElementById('newEmail').value.trim();
-  const password = document.getElementById('emailPassword').value;
-  const msg = document.getElementById('emailMsg');
-
-  if (!newEmail || !password) {
-    msg.style.color = '#A32D2D';
-    msg.textContent = 'Please fill both fields.';
-    return;
-  }
-
+// ══════════════════════════════════════
+//  ORDERS
+// ══════════════════════════════════════
+async function loadOrders() {
+  const status = document.getElementById('orderStatusFilter').value;
+  const tbody = document.getElementById('ordersTableBody');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:28px;color:#6b7c72">Loading...</td></tr>';
   try {
-    const res = await fetch('/api/auth/change-email', {
-      method: 'PATCH',
-      headers: authHeaders(),
-      body: JSON.stringify({ password, newEmail })
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      msg.style.color = '#A32D2D';
-      msg.textContent = data.error;
+    const d = await apiFetch(`/api/admin/orders?status=${status}&page=${ordersPage}&limit=20`);
+    if (!d.orders.length) {
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="ei">📭</div><h3>No orders found</h3></div></td></tr>';
       return;
     }
+    tbody.innerHTML = d.orders.map(o => {
+      const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+      const itemCount = items.length;
+      const date = new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+      return `<tr>
+        <td><strong>#${o.id}</strong></td>
+        <td>
+          <div style="font-weight:800">${o.customer_name}</div>
+          <div style="font-size:12px;color:var(--muted)">${o.phone}</div>
+        </td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="toggleOrderItems(${o.id})">
+            ${itemCount} item${itemCount !== 1 ? 's' : ''} 👁
+          </button>
+        </td>
+        <td><strong style="color:var(--green)">₹${parseFloat(o.total).toFixed(0)}</strong></td>
+        <td><span style="font-size:12px;font-weight:700">${o.payment_method === 'online' ? '💳 Online' : '💵 COD'}</span></td>
+        <td style="font-size:12.5px;color:var(--muted)">${date}</td>
+        <td><span class="badge badge-${o.status}">${o.status}</span></td>
+        <td>
+          <select class="status-select" onchange="updateOrderStatus(${o.id}, this.value)" data-current="${o.status}">
+            <option value="">Change status...</option>
+            <option value="confirmed">✅ Confirm</option>
+            <option value="dispatched">🚚 Dispatch</option>
+            <option value="delivered">🏠 Delivered</option>
+            <option value="cancelled">❌ Cancel</option>
+          </select>
+        </td>
+      </tr>
+      <tr class="order-items-row" id="items-${o.id}">
+        <td class="order-items-cell" colspan="8">
+          <div class="order-items-list">
+            ${items.map(i => `<div class="order-item-chip">${i.name} × ${i.qty} — ₹${(i.qty * i.price).toFixed(0)}</div>`).join('')}
+          </div>
+          <div class="order-address">📍 ${o.address || '—'}</div>
+          <div style="margin-top:8px">
+            <a href="/invoice.html?id=${o.id}" target="_blank" class="btn btn-outline btn-sm">🧾 Invoice</a>
+            <a href="/track.html?id=${o.id}" target="_blank" class="btn btn-outline btn-sm" style="margin-left:6px">📦 Track</a>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
 
-    msg.style.color = '#27500A';
-    msg.textContent = '✓ Email changed! Logging out...';
-    setTimeout(() => { logout(); }, 1500);
-
-  } catch (err) {
-    msg.style.color = '#A32D2D';
-    msg.textContent = 'Something went wrong.';
+    // Pagination
+    const totalPages = Math.ceil(d.total / 20);
+    renderPagination('ordersPagination', ordersPage, totalPages, (p) => { ordersPage = p; loadOrders(); });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--red)">${e.message}</td></tr>`;
   }
 }
 
+function toggleOrderItems(id) {
+  const row = document.getElementById('items-' + id);
+  row.classList.toggle('open');
+}
 
-// Load low stock medicines
-async function loadLowStock() {
+async function updateOrderStatus(id, status) {
+  if (!status) return;
   try {
-    const res = await fetch('/api/medicines/low-stock', {
-      headers: authHeaders()
-    });
-    if (!res.ok) return;
-    const medicines = await res.json();
-    renderLowStock(medicines);
-  } catch (err) {
-    console.error('Failed to load low stock', err);
+    await apiFetch(`/api/admin/orders/${id}/status`, { method: 'PATCH', body: { status } });
+    showToast('✅ Order #' + id + ' → ' + status, 'success');
+    loadOrders();
+    loadStats();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
   }
 }
 
-function renderLowStock(medicines) {
-  const panel = document.getElementById('lowStockPanel');
-  const list = document.getElementById('lowStockList');
-  const count = document.getElementById('lowStockCount');
-
-  if (!medicines.length) {
-    panel.style.display = 'none';
-    return;
-  }
-
-  panel.style.display = 'block';
-  count.textContent = medicines.length;
-
-  list.innerHTML = medicines.map(m => `
-    <div class="low-stock-item">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span>${m.icon}</span>
-        <div>
-          <div style="font-weight:500;color:#1a1a1a">${m.name}</div>
-          <div style="font-size:11px;color:#777">${m.brand} · ${m.category}</div>
+// ══════════════════════════════════════
+//  MEDICINES
+// ══════════════════════════════════════
+async function loadMedicines() {
+  const search = document.getElementById('medSearch').value.trim();
+  const grid = document.getElementById('medicinesGrid');
+  grid.innerHTML = '<div class="empty-state"><div class="ei">⏳</div><p>Loading...</p></div>';
+  try {
+    const params = new URLSearchParams({ page: medsPage, limit: 24 });
+    if (search) params.set('search', search);
+    if (showLowStock) params.set('lowstock', '1');
+    const d = await apiFetch('/api/admin/medicines?' + params);
+    if (!d.medicines.length) {
+      grid.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><h3>No medicines found</h3><p>Try a different search</p></div>';
+      return;
+    }
+    grid.innerHTML = d.medicines.map(m => `
+      <div class="medicine-card" id="medcard-${m.id}">
+        <div class="medicine-card-top">
+          <div class="med-icon-box">${m.icon || '💊'}</div>
+          <div>
+            <div class="med-card-name">${m.name}</div>
+            <div class="med-card-brand">${m.brand || '—'}</div>
+            ${m.stock <= 5 ? `<span class="low-stock-badge">⚠️ Low: ${m.stock} left</span>` : ''}
+          </div>
+        </div>
+        <div class="med-card-fields">
+          <div class="med-field">
+            <label>Price (₹)</label>
+            <input type="number" id="price-${m.id}" value="${m.price}" step="0.01" min="0">
+          </div>
+          <div class="med-field">
+            <label>Stock</label>
+            <input type="number" id="stock-${m.id}" value="${m.stock}" min="0"
+              class="${m.stock <= 5 ? 'stock-low' : 'stock-ok'}">
+          </div>
+        </div>
+        <div class="med-card-actions">
+          <button class="btn btn-green btn-sm" onclick="saveMedicine(${m.id})">💾 Save</button>
+          <button class="btn btn-outline btn-sm" onclick="deleteMedicine(${m.id}, '${m.name.replace(/'/g, "\\'")}')">🗑</button>
         </div>
       </div>
-      <span class="stock-number ${m.stock === 0 ? 'stock-zero' : 'stock-low'}">
-        ${m.stock === 0 ? 'Out of stock' : `${m.stock} left`}
-      </span>
-    </div>
-  `).join('');
-}
+    `).join('');
 
-
-
-function exportCSV() {
-  const dateInput = document.getElementById('dateFilter');
-  const date = dateInput.value;
-
-  // Build URL with token in header won't work for file download
-  // So we pass token as query param for this one endpoint
-  let url = `/api/orders/export/csv`;
-  if (date) url += `?date=${date}`;
-
-  // Create a temporary link and click it to trigger download
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', '');
-
-  // Add token to request via fetch and create blob
-  fetch(url, { headers: authHeaders() })
-    .then(res => {
-      if (!res.ok) throw new Error('Export failed');
-      return res.blob();
-    })
-    .then(blob => {
-      const blobUrl = URL.createObjectURL(blob);
-      link.href = blobUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    })
-    .catch(err => {
-      alert('Failed to export. Please try again.');
-      console.error(err);
-    });
-}
-
-
-async function approvePrescription(id) {
-  if (!confirm('Approve this prescription and confirm the order?')) return;
-  try {
-    const res = await fetch(`/api/orders/${id}/prescription/approve`, {
-      method: 'PATCH',
-      headers: authHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) { alert(data.error); return; }
-    alert('✓ Prescription approved! Order confirmed.');
-    loadOrders();
-  } catch (err) {
-    alert('Failed to approve prescription.');
+    const totalPages = Math.ceil(d.total / 24);
+    renderPagination('medPagination', medsPage, totalPages, (p) => { medsPage = p; loadMedicines(); });
+  } catch (e) {
+    grid.innerHTML = `<div class="empty-state"><div class="ei">❌</div><p>${e.message}</p></div>`;
   }
 }
 
-async function rejectPrescription(id) {
-  const reason = prompt('Reason for rejection (shown to store record):') || 'Invalid prescription';
-  if (reason === null) return; // cancelled
+async function saveMedicine(id) {
+  const price = document.getElementById('price-' + id).value;
+  const stock = document.getElementById('stock-' + id).value;
   try {
-    const res = await fetch(`/api/orders/${id}/prescription/reject`, {
+    await apiFetch(`/api/admin/medicines/${id}`, {
       method: 'PATCH',
-      headers: authHeaders(),
-      body: JSON.stringify({ reason })
+      body: { price: parseFloat(price), stock: parseInt(stock) }
     });
-    const data = await res.json();
-    if (!res.ok) { alert(data.error); return; }
-    alert('✗ Prescription rejected. Stock has been restored.');
-    loadOrders();
-  } catch (err) {
-    alert('Failed to reject prescription.');
+    showToast('✅ Saved!', 'success');
+    loadMedicines();
+    loadStats();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
   }
 }
+
+async function deleteMedicine(id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  try {
+    await apiFetch(`/api/admin/medicines/${id}`, { method: 'DELETE' });
+    showToast('🗑 Deleted', 'success');
+    loadMedicines();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+async function addMedicine() {
+  const name = document.getElementById('newName').value.trim();
+  const price = document.getElementById('newPrice').value;
+  if (!name || !price) { showToast('Name and price are required', 'error'); return; }
+  try {
+    await apiFetch('/api/admin/medicines', {
+      method: 'POST',
+      body: {
+        name,
+        brand: document.getElementById('newBrand').value.trim(),
+        price: parseFloat(price),
+        stock: parseInt(document.getElementById('newStock').value) || 0,
+        category: document.getElementById('newCategory').value.trim() || 'General',
+        icon: document.getElementById('newIcon').value.trim() || '💊',
+        uses: document.getElementById('newUses').value.trim(),
+        requires_prescription: document.getElementById('newRx').checked
+      }
+    });
+    showToast('✅ Medicine added!', 'success');
+    ['newName','newBrand','newPrice','newStock','newCategory','newIcon','newUses'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('newRx').checked = false;
+    document.getElementById('addMedForm').style.display = 'none';
+    loadMedicines();
+  } catch (e) {
+    showToast('❌ ' + e.message, 'error');
+  }
+}
+
+function toggleLowStock() {
+  showLowStock = !showLowStock;
+  const btn = document.getElementById('lowStockToggle');
+  btn.style.background = showLowStock ? 'var(--red-light)' : '';
+  btn.style.borderColor = showLowStock ? 'var(--red)' : '';
+  btn.style.color = showLowStock ? 'var(--red)' : '';
+  medsPage = 1;
+  loadMedicines();
+}
+
+// ══════════════════════════════════════
+//  CUSTOMERS
+// ══════════════════════════════════════
+async function loadCustomers() {
+  const tbody = document.getElementById('customersBody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:#6b7c72">Loading...</td></tr>';
+  try {
+    const customers = await apiFetch('/api/admin/customers');
+    if (!customers.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="ei">👤</div><h3>No customers yet</h3></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = customers.map(c => {
+      const joined = new Date(c.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+      return `<tr>
+        <td>
+          <div class="cust-info">
+            <div class="cust-avatar">👤</div>
+            <strong>${c.name}</strong>
+          </div>
+        </td>
+        <td style="font-size:13px;color:var(--muted)">${c.email}</td>
+        <td>${c.phone || '—'}</td>
+        <td><span class="badge badge-confirmed">${c.order_count} orders</span></td>
+        <td><strong style="color:var(--green)">₹${parseFloat(c.total_spent).toLocaleString('en-IN')}</strong></td>
+        <td style="font-size:12.5px;color:var(--muted)">${joined}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--red);padding:20px">${e.message}</td></tr>`;
+  }
+}
+
+// ══════════════════════════════════════
+//  PAGINATION
+// ══════════════════════════════════════
+function renderPagination(containerId, current, total, onPageChange) {
+  const el = document.getElementById(containerId);
+  if (total <= 1) { el.innerHTML = ''; return; }
+  let html = `<button class="page-btn" ${current === 1 ? 'disabled' : ''} onclick="(${onPageChange.toString()})(${current - 1})">← Prev</button>`;
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || Math.abs(i - current) <= 1) {
+      html += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="(${onPageChange.toString()})(${i})">${i}</button>`;
+    } else if (Math.abs(i - current) === 2) {
+      html += `<span style="padding:8px 4px;color:var(--muted)">…</span>`;
+    }
+  }
+  html += `<button class="page-btn" ${current === total ? 'disabled' : ''} onclick="(${onPageChange.toString()})(${current + 1})">Next →</button>`;
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ══════════════════════════════════════
+//  KEYBOARD SHORTCUT: Enter on login
+// ══════════════════════════════════════
+document.getElementById('adminKeyInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') adminLogin();
+});
 </script>
 </body>
 </html>
