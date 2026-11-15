@@ -77,6 +77,7 @@ app.use('/api/payment', paymentRouter);
 app.use('/api/otp', otpRouter);
 app.use('/api/email-otp', emailOtpRouter);
 app.use('/api/reviews', reviewsRouter);
+app.use('/api/admin', require('./routes/admin'));
 
 // ── Fix 6: Global error handler — hide stack traces ──
 app.use((err, req, res, next) => {
