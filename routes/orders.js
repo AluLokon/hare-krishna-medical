@@ -6,6 +6,7 @@ const verifyToken = require('../middleware');
 const { body, validationResult } = require('express-validator');
 const { sendOrderConfirmation, sendAdminNotification, sendLowStockAlert } = require('../email');
 const { sendNewOrderWhatsApp } = require('../whatsapp');
+const { sendNewOrderEmail } = require('../email-order');
 
 const orderValidation = [
   body('customer_name').trim().notEmpty().withMessage('Name is required')
@@ -154,7 +155,9 @@ router.post('/', orderValidation, async (req, res) => {
       sendOrderConfirmation(email, customer_name, orderId, items, total);
     }
     sendAdminNotification(orderId, customer_name, phone, items, total);
+    
     sendNewOrderWhatsApp(orderId, customer_name, phone, items, total);
+    sendNewOrderEmail({ id: orderId, customer_name, phone, address, items, total, payment_method: req.body.payment_method, created_at: new Date() }).catch(console.error);
 
     res.json({
       success: true,

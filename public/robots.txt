@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /report.html
+Disallow: /api/
+
+Sitemap: https://hare-krishna-medical-sshf.onrender.com/sitemap.xml
