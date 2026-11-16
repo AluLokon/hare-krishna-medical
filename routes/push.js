@@ -80,9 +80,8 @@ async function sendOrderNotification(orderId, status, customerName) {
 
   // Get order details
   const orderRes = await pool.query(
-    `SELECT o.id, o.customer_name, o.phone, c.id as customer_id
+    `SELECT o.id, o.customer_name, o.phone, o.customer_id
      FROM orders o
-     LEFT JOIN customers c ON c.phone = o.phone OR c.email = o.phone
      WHERE o.id = $1`, [orderId]
   );
   if (!orderRes.rows.length) return;
@@ -106,16 +105,42 @@ async function sendOrderNotification(orderId, status, customerName) {
   });
 
   // Find subscriptions for this customer
+  // Try customer_id first, then fall back to phone match
   let subs;
   if (order.customer_id) {
     subs = await pool.query(
-      `SELECT endpoint, keys FROM push_subscriptions WHERE customer_id = $1`,
+      `SELECT ps.endpoint, ps.keys FROM push_subscriptions ps WHERE ps.customer_id = $1`,
       [order.customer_id]
     );
-  } else {
-    // No customer_id — can't match, skip
+  }
+
+  // If no results via customer_id, try matching by phone
+  if (!subs || !subs.rows.length) {
+    subs = await pool.query(
+      `SELECT ps.endpoint, ps.keys FROM push_subscriptions ps
+       JOIN customers c ON c.id = ps.customer_id
+       WHERE c.phone = $1`,
+      [order.phone]
+    );
+  }
+
+  // Last resort: try all subscriptions for customer_id from customers table by phone
+  if (!subs || !subs.rows.length) {
+    const custRes = await pool.query(`SELECT id FROM customers WHERE phone = $1`, [order.phone]);
+    if (custRes.rows.length) {
+      subs = await pool.query(
+        `SELECT endpoint, keys FROM push_subscriptions WHERE customer_id = $1`,
+        [custRes.rows[0].id]
+      );
+    }
+  }
+
+  if (!subs || !subs.rows.length) {
+    console.log(`[Push] No subscription found for order ${orderId}, phone: ${order.phone}`);
     return;
   }
+
+  console.log(`[Push] Sending to ${subs.rows.length} subscription(s) for order ${orderId}`);
 
   // Send to all their subscriptions
   const sends = subs.rows.map(async sub => {
