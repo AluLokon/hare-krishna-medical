@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
 let sendOrderNotification;
-try { ({ sendOrderNotification } = require('../public/push')); } catch(e) {}
+try { ({ sendOrderNotification } = require('./push')); } catch(e) {}
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
